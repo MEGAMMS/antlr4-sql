@@ -1,0 +1,25 @@
+# -------------------------------
+# Enforce correct line endings
+# -------------------------------
+
+# Bash scripts (Linux/macOS)
+*.sh text eol=lf
+
+# Python source files
+*.py text eol=lf
+
+# ANTLR grammar files
+*.g4 text eol=lf
+
+# Markdown files
+*.md text eol=lf
+
+# PowerShell scripts (Windows)
+*.ps1 text eol=crlf
+
+# Config / text files
+*.toml text eol=lf
+*.txt text eol=lf
+
+# Binary files (never touch line endings)
+*.jar binary

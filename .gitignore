@@ -205,3 +205,15 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# uv specific files
+.python-version
+pyproject.toml
+uv.lock
+
+# extension specific files
+antlr4-sql-output.md
+antlr4-sql-output.txt
+
+# antlr java files
+.antlr
