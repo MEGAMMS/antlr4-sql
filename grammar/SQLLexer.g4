@@ -40,6 +40,8 @@ fragment X : [xX];
 fragment Y : [yY];
 fragment Z : [zZ];
 
+fragment LINE_CONT : '\\' '\r'? '\n' [ \t]* ;
+
 fragment DIGIT : [0-9];
 fragment HEXDIGIT : [0-9a-fA-F];
 
@@ -120,7 +122,8 @@ INT : DIGIT+ ;
 
 
 // ===== Strings=====
-STRING : '\'' ( '\'\'' | ~'\'' )* '\'' ;
+STRING : '\'' ( '\'\'' | LINE_CONT | ~['\\\r\n] | '\\' . )* '\'' ;
+
 
 // ===== Comments =====
 LINE_COMMENT : '--' ~[\r\n]* -> skip ;
@@ -137,8 +140,8 @@ mode DEFAULT_MODE;
 ID
   : [a-zA-Z_][a-zA-Z0-9_]*
     {
-      if self.text.upper() in self.RESERVED:
-        self.type = self.KEYWORD
+if self.text.upper() in self.RESERVED:
+  self.type = self.KEYWORD
     }
   ;
 
