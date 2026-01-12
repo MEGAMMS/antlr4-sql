@@ -147,3 +147,6 @@ if self.text.upper() in self.RESERVED:
 
 // ===== Whitespace =====
 WS : [ \t\r\n]+ -> skip ;
+
+HEX_LITERAL : '0' [xX] HEXDIGIT+ (LINE_CONT HEXDIGIT+)* ;
+BIT_STRING  : '0' [bB] [01]+ (LINE_CONT [01]+)* ;
