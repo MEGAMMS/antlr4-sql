@@ -130,3 +130,16 @@ mode COMMENT;
   NESTED_BLOCK_START : '/*' -> pushMode(COMMENT), skip ;
   BLOCK_COMMENT_END  : '*/' -> popMode, skip ;
   COMMENT_TEXT       : .    -> skip ;
+
+
+// ===== Identifiers =====
+ID
+  : [a-zA-Z_][a-zA-Z0-9_]*
+    {
+      if self.text.upper() in self.RESERVED:
+        self.type = self.KEYWORD
+    }
+  ;
+
+// ===== Whitespace =====
+WS : [ \t\r\n]+ -> skip ;
