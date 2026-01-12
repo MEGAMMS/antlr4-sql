@@ -217,3 +217,5 @@ antlr4-sql-output.txt
 
 # antlr java files
 .antlr
+
+src/antlr_generated
