@@ -118,3 +118,6 @@ FLOAT
 
 INT : DIGIT+ ;
 
+
+// ===== Strings=====
+STRING : '\'' ( '\'\'' | ~'\'' )* '\'' ;
