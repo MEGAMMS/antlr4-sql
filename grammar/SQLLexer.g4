@@ -150,3 +150,7 @@ WS : [ \t\r\n]+ -> skip ;
 
 HEX_LITERAL : '0' [xX] HEXDIGIT+ (LINE_CONT HEXDIGIT+)* ;
 BIT_STRING  : '0' [bB] [01]+ (LINE_CONT [01]+)* ;
+
+GLOBAL_VAR : '@@' [a-zA-Z_][a-zA-Z0-9_]* ;
+LOCAL_VAR  : '@'  [a-zA-Z_][a-zA-Z0-9_]* ;
+
