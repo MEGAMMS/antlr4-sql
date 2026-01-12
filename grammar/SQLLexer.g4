@@ -95,3 +95,14 @@ NEQ : '!=' | '<>' ;
 EQ  : '=' ;
 GT  : '>' ;
 LT  : '<' ;
+
+PLUS  : '+' ;
+MINUS : '-' ;
+STAR  : '*' ;
+SLASH : '/' ;
+
+COMMA  : ',' ;
+DOT    : '.' ;
+SEMI   : ';' ;
+LPAREN : '(' ;
+RPAREN : ')' ;
