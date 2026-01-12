@@ -121,3 +121,12 @@ INT : DIGIT+ ;
 
 // ===== Strings=====
 STRING : '\'' ( '\'\'' | ~'\'' )* '\'' ;
+
+// ===== Comments =====
+LINE_COMMENT : '--' ~[\r\n]* -> skip ;
+BLOCK_COMMENT_START : '/*' -> pushMode(COMMENT), skip ;
+
+mode COMMENT;
+  NESTED_BLOCK_START : '/*' -> pushMode(COMMENT), skip ;
+  BLOCK_COMMENT_END  : '*/' -> popMode, skip ;
+  COMMENT_TEXT       : .    -> skip ;
