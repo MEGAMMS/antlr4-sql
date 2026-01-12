@@ -87,3 +87,11 @@ NULL : N U L L ;
 IS   : I S ;
 
 UNION : U N I O N ;
+
+
+GE  : '>=' ;
+LE  : '<=' ;
+NEQ : '!=' | '<>' ;
+EQ  : '=' ;
+GT  : '>' ;
+LT  : '<' ;
