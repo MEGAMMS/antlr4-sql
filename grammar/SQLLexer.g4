@@ -3,13 +3,13 @@ lexer grammar SQLLexer;
 tokens { KEYWORD } 
 
 @members {
-  RESERVED = {
-    "SELECT","FROM","WHERE","AND","OR","NOT","AS","DISTINCT","DECLARE",
-    "INSERT","INTO","VALUES","UPDATE","SET","DELETE",
-    "CREATE","TABLE","ALTER","DROP",
-    "JOIN","INNER","LEFT","ON",
-    "GROUP","BY","HAVING","ORDER","ASC","DESC","NULL","IS","GO"
-  }
+RESERVED = {
+"SELECT","FROM","WHERE","AND","OR","NOT","AS","DISTINCT","DECLARE",
+"INSERT","INTO","VALUES","UPDATE","SET","DELETE",
+"CREATE","TABLE","ALTER","DROP",
+"JOIN","INNER","LEFT","ON",
+"GROUP","BY","HAVING","ORDER","ASC","DESC","NULL","IS","GO"
+}
 }
 
 // ===== Fragments =====
@@ -147,12 +147,16 @@ BIT_STRING  : '0' [bB] [01]+ (LINE_CONT [01]+)* ;
 GLOBAL_VAR : '@@' [a-zA-Z_][a-zA-Z0-9_]* ;
 LOCAL_VAR  : '@'  [a-zA-Z_][a-zA-Z0-9_]* ;
 
+BRACKET_ID : '[' ( ']]' | ~[\]\r\n] )* ']' ;
+DQUOTED_ID : '"' ( '""' | ~["\r\n] )* '"' ;
+
+
 // ===== Identifiers =====
 ID
   : [a-zA-Z_][a-zA-Z0-9_]*
     {
 if self.text.upper() in self.RESERVED:
-  self.type = self.KEYWORD
+    self.type = SQLLexer.KEYWORD
     }
   ;
 
