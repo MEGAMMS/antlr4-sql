@@ -154,3 +154,7 @@ BIT_STRING  : '0' [bB] [01]+ (LINE_CONT [01]+)* ;
 GLOBAL_VAR : '@@' [a-zA-Z_][a-zA-Z0-9_]* ;
 LOCAL_VAR  : '@'  [a-zA-Z_][a-zA-Z0-9_]* ;
 
+// ===== BOOLEAN =====
+TRUE  : T R U E ;
+FALSE : F A L S E ;
+
