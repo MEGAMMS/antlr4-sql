@@ -9,10 +9,22 @@ RESERVED = {
 "CREATE","TABLE","ALTER","DROP",
 "JOIN","INNER","LEFT","ON",
 "GROUP","BY","HAVING","ORDER","ASC","DESC","NULL","IS","GO","UNION",
-"BEGIN","END","CASE","WHEN","THEN","ELSE","EXISTS","IN",
+"BEGIN","END","CASE","WHEN","THEN","ELSE","EXISTS","IN","IF",
 "TRY","CATCH","EXEC","PRINT","DEFAULT","IDENTITY","TOP","OUTPUT",
 "WITH","OVER","PARTITION","RIGHT","FULL","CROSS","OUTER","BETWEEN","LIKE"
 }
+
+def emitError(self, msg):
+    listener = self.getErrorListenerDispatch()
+    listener.syntaxError(self, None, self._tokenStartLine, self._tokenStartColumn, msg, None)
+
+def nextToken(self):
+    token = super().nextToken()
+    if token.type == Token.EOF and self._mode == self.COMMENT:
+        # Report unterminated block comment before final EOF
+        self.emitError("unterminated block comment")
+        self.popMode()
+    return token
 }
 
 // ===== Fragments =====
@@ -102,6 +114,7 @@ THEN  : T H E N ;
 ELSE  : E L S E ;
 EXISTS: E X I S T S ;
 IN    : I N ;
+IF    : I F ;
 TRY   : T R Y ;
 CATCH : C A T C H ;
 EXEC  : E X E C ;
@@ -163,7 +176,42 @@ INT : DIGIT+ ;
 
 
 // ===== Strings=====
-STRING : [nN]? '\'' ( '\'\'' | LINE_CONT | ~['\\] | '\\' . )* '\'' ;
+// Treat backslash as plain text; strings cannot span lines.
+NSTRING
+  : [nN] '\'' ( '\'\'' | ~['\r\n] )* '\''
+    -> type(STRING)
+  ;
+UNCLOSED_NSTRING_EOF
+  : [nN] '\'' ( '\'\'' | ~['\r\n] )* EOF
+    {
+    self.emitError("unterminated string literal")
+    }
+    -> skip
+  ;
+UNCLOSED_NSTRING_EOL
+  : [nN] '\'' ( '\'\'' | ~['\r\n] )* '\r'? '\n'
+    {
+    self.emitError("unterminated string literal")
+    }
+    -> skip
+  ;
+STRING
+  : '\'' ( '\'\'' | ~['\r\n] )* '\''
+  ;
+UNCLOSED_STRING_EOF
+  : '\'' ( '\'\'' | ~['\r\n] )* EOF
+    {
+    self.emitError("unterminated string literal")
+    }
+    -> skip
+  ;
+UNCLOSED_STRING_EOL
+  : '\'' ( '\'\'' | ~['\r\n] )* '\r'? '\n'
+    {
+    self.emitError("unterminated string literal")
+    }
+    -> skip
+  ;
 
 
 // ===== Comments =====
@@ -174,6 +222,13 @@ mode COMMENT;
   NESTED_BLOCK_START : '/*' -> pushMode(COMMENT), skip ;
   BLOCK_COMMENT_END  : '*/' -> popMode, skip ;
   COMMENT_TEXT       : .    -> skip ;
+  UNTERMINATED_BLOCK_COMMENT
+    : EOF
+      {
+      self.emitError("unterminated block comment")
+      }
+      -> popMode, skip
+    ;
 
 mode DEFAULT_MODE;
 
@@ -181,9 +236,22 @@ mode DEFAULT_MODE;
 TRUE  : T R U E ;
 FALSE : F A L S E ;
 
-
 HEX_LITERAL : '0' [xX] HEXDIGIT+ (LINE_CONT HEXDIGIT+)* ;
+
+INVALID_HEX_LITERAL
+  : '0' [xX] HEXDIGIT+ (LINE_CONT HEXDIGIT+)* [g-zG-Z_] [a-zA-Z0-9_]*
+    { self.emitError("invalid hex literal") }
+    -> skip
+  ;
+
 BIT_STRING  : '0' [bB] [01]+ (LINE_CONT [01]+)* ;
+
+INVALID_BIT_STRING
+  : '0' [bB] [01]+ (LINE_CONT [01]+)* [2-9a-zA-Z_] [a-zA-Z0-9_]*
+    { self.emitError("invalid bit string") }
+    -> skip
+  ;
+
 
 GLOBAL_VAR : '@@' [a-zA-Z_][a-zA-Z0-9_]* ;
 LOCAL_VAR  : '@'  [a-zA-Z_][a-zA-Z0-9_]* ;
@@ -191,6 +259,13 @@ TEMP_ID    : '#' '#'? [a-zA-Z_][a-zA-Z0-9_]* ;
 
 BRACKET_ID : '[' ( ']]' | ~[\]\r\n] )* ']' ;
 DQUOTED_ID : '"' ( '""' | ~["\r\n] )* '"' ;
+UNCLOSED_BRACKET_ID
+  : '[' ~[\]\r\n]* (EOF | '\r'? '\n')
+    {
+    self.emitError("unterminated bracket identifier")
+    }
+    -> skip
+  ;
 
 
 // ===== Identifiers =====
@@ -204,6 +279,10 @@ if self.text.upper() in self.RESERVED:
 
 // ===== Whitespace =====
 WS : [ \t\r\n]+ -> skip ;
-
-
-
+ERROR_CHAR
+  : .
+    {
+    self.emitError(f"unexpected character: {self.text}")
+    }
+    -> skip
+  ;
