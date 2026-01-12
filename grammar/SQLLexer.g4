@@ -136,6 +136,17 @@ mode COMMENT;
 
 mode DEFAULT_MODE;
 
+// ===== BOOLEAN =====
+TRUE  : T R U E ;
+FALSE : F A L S E ;
+
+
+HEX_LITERAL : '0' [xX] HEXDIGIT+ (LINE_CONT HEXDIGIT+)* ;
+BIT_STRING  : '0' [bB] [01]+ (LINE_CONT [01]+)* ;
+
+GLOBAL_VAR : '@@' [a-zA-Z_][a-zA-Z0-9_]* ;
+LOCAL_VAR  : '@'  [a-zA-Z_][a-zA-Z0-9_]* ;
+
 // ===== Identifiers =====
 ID
   : [a-zA-Z_][a-zA-Z0-9_]*
@@ -148,13 +159,6 @@ if self.text.upper() in self.RESERVED:
 // ===== Whitespace =====
 WS : [ \t\r\n]+ -> skip ;
 
-HEX_LITERAL : '0' [xX] HEXDIGIT+ (LINE_CONT HEXDIGIT+)* ;
-BIT_STRING  : '0' [bB] [01]+ (LINE_CONT [01]+)* ;
 
-GLOBAL_VAR : '@@' [a-zA-Z_][a-zA-Z0-9_]* ;
-LOCAL_VAR  : '@'  [a-zA-Z_][a-zA-Z0-9_]* ;
 
-// ===== BOOLEAN =====
-TRUE  : T R U E ;
-FALSE : F A L S E ;
 
