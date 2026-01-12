@@ -8,7 +8,10 @@ RESERVED = {
 "INSERT","INTO","VALUES","UPDATE","SET","DELETE",
 "CREATE","TABLE","ALTER","DROP",
 "JOIN","INNER","LEFT","ON",
-"GROUP","BY","HAVING","ORDER","ASC","DESC","NULL","IS","GO"
+"GROUP","BY","HAVING","ORDER","ASC","DESC","NULL","IS","GO","UNION",
+"BEGIN","END","CASE","WHEN","THEN","ELSE","EXISTS","IN",
+"TRY","CATCH","EXEC","PRINT","DEFAULT","IDENTITY","TOP","OUTPUT",
+"WITH","OVER","PARTITION","RIGHT","FULL","CROSS","OUTER","BETWEEN","LIKE"
 }
 }
 
@@ -91,11 +94,44 @@ NULL : N U L L ;
 IS   : I S ;
 
 UNION : U N I O N ;
+BEGIN : B E G I N ;
+END   : E N D ;
+CASE  : C A S E ;
+WHEN  : W H E N ;
+THEN  : T H E N ;
+ELSE  : E L S E ;
+EXISTS: E X I S T S ;
+IN    : I N ;
+TRY   : T R Y ;
+CATCH : C A T C H ;
+EXEC  : E X E C ;
+PRINT : P R I N T ;
+DEFAULT : D E F A U L T ;
+IDENTITY: I D E N T I T Y ;
+TOP   : T O P ;
+OUTPUT: O U T P U T ;
+WITH  : W I T H ;
+OVER  : O V E R ;
+PARTITION : P A R T I T I O N ;
+RIGHT : R I G H T ;
+FULL  : F U L L ;
+CROSS : C R O S S ;
+OUTER : O U T E R ;
+BETWEEN : B E T W E E N ;
+LIKE : L I K E ;
 
 // ===== Operators =====
+PLUS_ASSIGN    : '+=' ;
+MINUS_ASSIGN   : '-=' ;
+STAR_ASSIGN    : '*=' ;
+SLASH_ASSIGN   : '/=' ;
+PERCENT_ASSIGN : '%=' ;
+
 GE  : '>=' ;
 LE  : '<=' ;
 NEQ : '!=' | '<>' ;
+NOT_LESS    : '!<' ;
+NOT_GREATER : '!>' ;
 EQ  : '=' ;
 GT  : '>' ;
 LT  : '<' ;
@@ -104,6 +140,11 @@ PLUS  : '+' ;
 MINUS : '-' ;
 STAR  : '*' ;
 SLASH : '/' ;
+PERCENT : '%' ;
+BIT_AND : '&' ;
+BIT_OR  : '|' ;
+BIT_XOR : '^' ;
+BIT_NOT : '~' ;
 
 COMMA  : ',' ;
 DOT    : '.' ;
@@ -122,7 +163,7 @@ INT : DIGIT+ ;
 
 
 // ===== Strings=====
-STRING : '\'' ( '\'\'' | LINE_CONT | ~['\\\r\n] | '\\' . )* '\'' ;
+STRING : [nN]? '\'' ( '\'\'' | LINE_CONT | ~['\\] | '\\' . )* '\'' ;
 
 
 // ===== Comments =====
@@ -146,6 +187,7 @@ BIT_STRING  : '0' [bB] [01]+ (LINE_CONT [01]+)* ;
 
 GLOBAL_VAR : '@@' [a-zA-Z_][a-zA-Z0-9_]* ;
 LOCAL_VAR  : '@'  [a-zA-Z_][a-zA-Z0-9_]* ;
+TEMP_ID    : '#' '#'? [a-zA-Z_][a-zA-Z0-9_]* ;
 
 BRACKET_ID : '[' ( ']]' | ~[\]\r\n] )* ']' ;
 DQUOTED_ID : '"' ( '""' | ~["\r\n] )* '"' ;
@@ -162,7 +204,6 @@ if self.text.upper() in self.RESERVED:
 
 // ===== Whitespace =====
 WS : [ \t\r\n]+ -> skip ;
-
 
 
 
