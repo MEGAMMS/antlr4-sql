@@ -11,6 +11,8 @@ tokens { KEYWORD }
     "GROUP","BY","HAVING","ORDER","ASC","DESC","NULL","IS","GO"
   }
 }
+
+// ===== Fragments =====
 fragment A : [aA];
 fragment B : [bB];
 fragment C : [cC];
@@ -41,7 +43,7 @@ fragment Z : [zZ];
 fragment DIGIT : [0-9];
 fragment HEXDIGIT : [0-9a-fA-F];
 
-// =======================
+// ==========Keywords=============
 
 
 DECLARE : D E C L A R E ;
@@ -88,7 +90,7 @@ IS   : I S ;
 
 UNION : U N I O N ;
 
-
+// ===== Operators =====
 GE  : '>=' ;
 LE  : '<=' ;
 NEQ : '!=' | '<>' ;
@@ -106,3 +108,13 @@ DOT    : '.' ;
 SEMI   : ';' ;
 LPAREN : '(' ;
 RPAREN : ')' ;
+
+// ===== Numbers =====
+
+FLOAT
+  : DIGIT+ '.' DIGIT*
+  | '.' DIGIT+
+  ;
+
+INT : DIGIT+ ;
+
