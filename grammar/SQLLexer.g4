@@ -131,6 +131,7 @@ mode COMMENT;
   BLOCK_COMMENT_END  : '*/' -> popMode, skip ;
   COMMENT_TEXT       : .    -> skip ;
 
+mode DEFAULT_MODE;
 
 // ===== Identifiers =====
 ID
