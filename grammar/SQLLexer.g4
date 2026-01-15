@@ -1,19 +1,6 @@
 lexer grammar SQLLexer;
 
-tokens { KEYWORD } 
-
 @members {
-RESERVED = {
-"SELECT","FROM","WHERE","AND","OR","NOT","AS","DISTINCT","DECLARE",
-"INSERT","INTO","VALUES","UPDATE","SET","DELETE",
-"CREATE","TABLE","ALTER","DROP",
-"JOIN","INNER","LEFT","ON",
-"GROUP","BY","HAVING","ORDER","ASC","DESC","NULL","IS","GO","UNION",
-"BEGIN","END","CASE","WHEN","THEN","ELSE","EXISTS","IN","IF",
-"TRY","CATCH","EXEC","PRINT","DEFAULT","IDENTITY","TOP","OUTPUT",
-"WITH","OVER","PARTITION","RIGHT","FULL","CROSS","OUTER","BETWEEN","LIKE"
-}
-
 def emitError(self, msg):
     listener = self.getErrorListenerDispatch()
     listener.syntaxError(self, None, self._tokenStartLine, self._tokenStartColumn, msg, None)
@@ -21,7 +8,6 @@ def emitError(self, msg):
 def nextToken(self):
     token = super().nextToken()
     if token.type == Token.EOF and self._mode == self.COMMENT:
-        # Report unterminated block comment before final EOF
         self.emitError("unterminated block comment")
         self.popMode()
     return token
@@ -56,16 +42,13 @@ fragment Y : [yY];
 fragment Z : [zZ];
 
 fragment LINE_CONT : '\\' '\r'? '\n' [ \t]* ;
-
 fragment DIGIT : [0-9];
 fragment HEXDIGIT : [0-9a-fA-F];
 
-// ==========Keywords=============
-
+// ========== Keywords (Explicit Definitions) =============
 
 DECLARE : D E C L A R E ;
 GO      : G O ;
-
 
 SELECT   : S E L E C T ;
 FROM     : F R O M ;
@@ -88,6 +71,14 @@ CREATE : C R E A T E ;
 TABLE  : T A B L E ;
 ALTER  : A L T E R ;
 DROP   : D R O P ;
+
+PRIMARY : P R I M A R Y ;
+KEY     : K E Y ;
+ADD     : A D D ;
+COLUMN  : C O L U M N ;
+VIEW    : V I E W ;
+PROCEDURE : P R O C E D U R E ;
+USE     : U S E ;
 
 JOIN  : J O I N ;
 INNER : I N N E R ;
@@ -166,7 +157,6 @@ LPAREN : '(' ;
 RPAREN : ')' ;
 
 // ===== Numbers =====
-
 FLOAT
   : DIGIT+ '.' DIGIT*
   | '.' DIGIT+
@@ -174,45 +164,26 @@ FLOAT
 
 INT : DIGIT+ ;
 
-
-// ===== Strings=====
-// Treat backslash as plain text; strings cannot span lines.
+// ===== Strings =====
 NSTRING
-  : [nN] '\'' ( '\'\'' | ~['\r\n] )* '\''
-    -> type(STRING)
+  : [nN] '\'' ( '\'\'' | ~['] )* '\''
   ;
+
 UNCLOSED_NSTRING_EOF
-  : [nN] '\'' ( '\'\'' | ~['\r\n] )* EOF
-    {
-    self.emitError("unterminated string literal")
-    }
-    -> skip
-  ;
-UNCLOSED_NSTRING_EOL
-  : [nN] '\'' ( '\'\'' | ~['\r\n] )* '\r'? '\n'
-    {
-    self.emitError("unterminated string literal")
-    }
-    -> skip
-  ;
-STRING
-  : '\'' ( '\'\'' | ~['\r\n] )* '\''
-  ;
-UNCLOSED_STRING_EOF
-  : '\'' ( '\'\'' | ~['\r\n] )* EOF
-    {
-    self.emitError("unterminated string literal")
-    }
-    -> skip
-  ;
-UNCLOSED_STRING_EOL
-  : '\'' ( '\'\'' | ~['\r\n] )* '\r'? '\n'
-    {
-    self.emitError("unterminated string literal")
-    }
+  : [nN] '\'' ( '\'\'' | ~['] )* EOF
+    { self.emitError("unterminated string literal") }
     -> skip
   ;
 
+STRING
+  : '\'' ( '\'\'' | ~['] )* '\''
+  ;
+
+UNCLOSED_STRING_EOF
+  : '\'' ( '\'\'' | ~['] )* EOF
+    { self.emitError("unterminated string literal") }
+    -> skip
+  ;
 
 // ===== Comments =====
 LINE_COMMENT : '--' ~[\r\n]* -> skip ;
@@ -221,18 +192,16 @@ BLOCK_COMMENT_START : '/*' -> pushMode(COMMENT), skip ;
 mode COMMENT;
   NESTED_BLOCK_START : '/*' -> pushMode(COMMENT), skip ;
   BLOCK_COMMENT_END  : '*/' -> popMode, skip ;
-  COMMENT_TEXT       : .    -> skip ;
+  COMMENT_TEXT        : .    -> skip ;
   UNTERMINATED_BLOCK_COMMENT
     : EOF
-      {
-      self.emitError("unterminated block comment")
-      }
+      { self.emitError("unterminated block comment") }
       -> popMode, skip
     ;
 
 mode DEFAULT_MODE;
 
-// ===== BOOLEAN =====
+// ===== BOOLEAN & LITERALS =====
 TRUE  : T R U E ;
 FALSE : F A L S E ;
 
@@ -252,37 +221,30 @@ INVALID_BIT_STRING
     -> skip
   ;
 
-
 GLOBAL_VAR : '@@' [a-zA-Z_][a-zA-Z0-9_]* ;
 LOCAL_VAR  : '@'  [a-zA-Z_][a-zA-Z0-9_]* ;
 TEMP_ID    : '#' '#'? [a-zA-Z_][a-zA-Z0-9_]* ;
 
 BRACKET_ID : '[' ( ']]' | ~[\]\r\n] )* ']' ;
 DQUOTED_ID : '"' ( '""' | ~["\r\n] )* '"' ;
+
 UNCLOSED_BRACKET_ID
   : '[' ~[\]\r\n]* (EOF | '\r'? '\n')
-    {
-    self.emitError("unterminated bracket identifier")
-    }
+    { self.emitError("unterminated bracket identifier") }
     -> skip
   ;
 
-
 // ===== Identifiers =====
+// تم إزالة كود البايثون لتجنب التضارب مع البارسير
 ID
   : [a-zA-Z_][a-zA-Z0-9_]*
-    {
-if self.text.upper() in self.RESERVED:
-    self.type = SQLLexer.KEYWORD
-    }
   ;
 
 // ===== Whitespace =====
 WS : [ \t\r\n]+ -> skip ;
+
 ERROR_CHAR
   : .
-    {
-    self.emitError(f"unexpected character: {self.text}")
-    }
+    { self.emitError(f"unexpected character: {self.text}") }
     -> skip
   ;

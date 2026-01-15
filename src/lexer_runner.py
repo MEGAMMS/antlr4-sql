@@ -1,7 +1,6 @@
 from antlr4 import FileStream, CommonTokenStream, Token
-from antlr_generated.grammar.SQLLexer import SQLLexer
+from grammar.SQLLexer import SQLLexer
 from antlr4.error.ErrorListener import ErrorListener
-
 
 class CollectingErrorListener(ErrorListener):
     def __init__(self):
