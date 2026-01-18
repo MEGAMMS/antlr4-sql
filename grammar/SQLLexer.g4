@@ -50,6 +50,8 @@ fragment HEXDIGIT : [0-9a-fA-F];
 DECLARE : D E C L A R E ;
 GO      : G O ;
 
+TRUNCATE : T R U N C A T E;
+
 SELECT   : S E L E C T ;
 FROM     : F R O M ;
 WHERE    : W H E R E ;

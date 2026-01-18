@@ -89,6 +89,11 @@ class SQLParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SQLParser#truncate_statement.
+    def visitTruncate_statement(self, ctx:SQLParser.Truncate_statementContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SQLParser#use_statement.
     def visitUse_statement(self, ctx:SQLParser.Use_statementContext):
         return self.visitChildren(ctx)
@@ -141,6 +146,11 @@ class SQLParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by SQLParser#insert_statement.
     def visitInsert_statement(self, ctx:SQLParser.Insert_statementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SQLParser#expression_list_parens.
+    def visitExpression_list_parens(self, ctx:SQLParser.Expression_list_parensContext):
         return self.visitChildren(ctx)
 
 
@@ -234,6 +244,11 @@ class SQLParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SQLParser#BetweenExpr.
+    def visitBetweenExpr(self, ctx:SQLParser.BetweenExprContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SQLParser#AtomExpr.
     def visitAtomExpr(self, ctx:SQLParser.AtomExprContext):
         return self.visitChildren(ctx)
@@ -281,6 +296,11 @@ class SQLParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by SQLParser#ExistsExpr.
     def visitExistsExpr(self, ctx:SQLParser.ExistsExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SQLParser#ScalarSubqueryExpr.
+    def visitScalarSubqueryExpr(self, ctx:SQLParser.ScalarSubqueryExprContext):
         return self.visitChildren(ctx)
 
 

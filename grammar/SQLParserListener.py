@@ -152,6 +152,15 @@ class SQLParserListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by SQLParser#truncate_statement.
+    def enterTruncate_statement(self, ctx:SQLParser.Truncate_statementContext):
+        pass
+
+    # Exit a parse tree produced by SQLParser#truncate_statement.
+    def exitTruncate_statement(self, ctx:SQLParser.Truncate_statementContext):
+        pass
+
+
     # Enter a parse tree produced by SQLParser#use_statement.
     def enterUse_statement(self, ctx:SQLParser.Use_statementContext):
         pass
@@ -248,6 +257,15 @@ class SQLParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by SQLParser#insert_statement.
     def exitInsert_statement(self, ctx:SQLParser.Insert_statementContext):
+        pass
+
+
+    # Enter a parse tree produced by SQLParser#expression_list_parens.
+    def enterExpression_list_parens(self, ctx:SQLParser.Expression_list_parensContext):
+        pass
+
+    # Exit a parse tree produced by SQLParser#expression_list_parens.
+    def exitExpression_list_parens(self, ctx:SQLParser.Expression_list_parensContext):
         pass
 
 
@@ -413,6 +431,15 @@ class SQLParserListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by SQLParser#BetweenExpr.
+    def enterBetweenExpr(self, ctx:SQLParser.BetweenExprContext):
+        pass
+
+    # Exit a parse tree produced by SQLParser#BetweenExpr.
+    def exitBetweenExpr(self, ctx:SQLParser.BetweenExprContext):
+        pass
+
+
     # Enter a parse tree produced by SQLParser#AtomExpr.
     def enterAtomExpr(self, ctx:SQLParser.AtomExprContext):
         pass
@@ -500,6 +527,15 @@ class SQLParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by SQLParser#ExistsExpr.
     def exitExistsExpr(self, ctx:SQLParser.ExistsExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SQLParser#ScalarSubqueryExpr.
+    def enterScalarSubqueryExpr(self, ctx:SQLParser.ScalarSubqueryExprContext):
+        pass
+
+    # Exit a parse tree produced by SQLParser#ScalarSubqueryExpr.
+    def exitScalarSubqueryExpr(self, ctx:SQLParser.ScalarSubqueryExprContext):
         pass
 
 

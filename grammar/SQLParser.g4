@@ -15,8 +15,8 @@ sql_script
     ;
 
 batch
-    : (sql_statement SEMI?)+ GO?    # StatementBatch
-    | GO                            # EmptyGo
+    : (sql_statement SEMI?)+ (GO SEMI?)?   # StatementBatch
+    | GO SEMI?                             # EmptyGo
     ;
 
 // ==========================================
@@ -37,6 +37,7 @@ ddl_statement
     : create_statement
     | alter_statement
     | drop_statement
+    | truncate_statement
     | use_statement
     ;
 
@@ -46,6 +47,7 @@ dml_statement
     | update_statement
     | delete_statement
     ;
+
 
 // ==========================================
 // DDL (Create, Alter, Drop)
@@ -83,6 +85,10 @@ alter_statement
 
 drop_statement
     : DROP (TABLE | VIEW | PROCEDURE) table_name
+    ;
+
+truncate_statement
+    : TRUNCATE TABLE table_name
     ;
 
 use_statement
@@ -138,10 +144,17 @@ order_list
     : expression (ASC | DESC)? (COMMA expression (ASC | DESC)?)*
     ;
 
-// --- INSERT ---
 insert_statement
     : INSERT (INTO)? table_name (LPAREN column_list RPAREN)? 
-      (VALUES LPAREN expression_list RPAREN | select_statement)
+      (
+        VALUES expression_list_parens (COMMA expression_list_parens)* // <--- تم التعديل
+      | select_statement
+      )
+    ;
+
+// قاعدة مساعدة جديدة للأقواس
+expression_list_parens
+    : LPAREN expression_list RPAREN
     ;
 
 column_list
@@ -229,13 +242,17 @@ expression
     | NOT expression                                 # NotExpr
     | expression (STAR | SLASH | PERCENT) expression # MultiplicativeExpr
     | expression (PLUS | MINUS) expression           # AdditiveExpr
+    // تمت إضافة BETWEEN هنا
+    | expression (NOT)? BETWEEN expression AND expression # BetweenExpr
     | expression (EQ | NEQ | GT | LT | GE | LE) expression # ComparisonExpr
-    | expression LIKE expression                     # LikeExpr
+    | expression (NOT)? LIKE expression                    # LikeExpr
     | expression (AND | OR) expression               # LogicalExpr
     | expression IS NULL                             # IsNullExpr
     | expression IS NOT NULL                         # IsNotNullExpr
     | expression (NOT)? IN LPAREN (expression_list | select_statement) RPAREN # InExpr
     | EXISTS LPAREN select_statement RPAREN          # ExistsExpr
+    // تمت إضافة هذا السطر لدعم (SELECT ...) كقيمة
+    | LPAREN select_statement RPAREN                 # ScalarSubqueryExpr 
     | CASE (WHEN expression THEN expression)+ (ELSE expression)? END # CaseExpr
     | function_call                                  # FunctionCallExpr
     | atom                                           # AtomExpr
@@ -263,6 +280,7 @@ id_name
     : ID
     | BRACKET_ID
     | DQUOTED_ID
+    | STRING
     ;
 
 constant
