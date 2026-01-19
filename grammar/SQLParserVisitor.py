@@ -49,13 +49,23 @@ class SQLParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by SQLParser#column_def_list.
-    def visitColumn_def_list(self, ctx:SQLParser.Column_def_listContext):
+    # Visit a parse tree produced by SQLParser#table_element_list.
+    def visitTable_element_list(self, ctx:SQLParser.Table_element_listContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SQLParser#table_element.
+    def visitTable_element(self, ctx:SQLParser.Table_elementContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by SQLParser#column_def.
     def visitColumn_def(self, ctx:SQLParser.Column_defContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SQLParser#table_constraint.
+    def visitTable_constraint(self, ctx:SQLParser.Table_constraintContext):
         return self.visitChildren(ctx)
 
 
@@ -251,6 +261,11 @@ class SQLParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by SQLParser#AtomExpr.
     def visitAtomExpr(self, ctx:SQLParser.AtomExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SQLParser#UnaryExpr.
+    def visitUnaryExpr(self, ctx:SQLParser.UnaryExprContext):
         return self.visitChildren(ctx)
 
 

@@ -54,15 +54,28 @@ dml_statement
 // ==========================================
 
 create_statement
-    : CREATE TABLE table_name LPAREN column_def_list RPAREN
+    : CREATE TABLE table_name LPAREN table_element_list RPAREN  // تم تغيير column_def_list إلى table_element_list
     ;
 
-column_def_list
-    : column_def (COMMA column_def)*
+// قائمة يمكن أن تحتوي على أعمدة أو قيود جدول
+table_element_list
+    : table_element (COMMA table_element)*
+    ;
+
+table_element
+    : column_def
+    | table_constraint
     ;
 
 column_def
     : id_name data_type (column_constraint)*
+    ;
+
+// قاعدة جديدة لدعم القيود المنفصلة مثل CONSTRAINT PK ...
+table_constraint
+    : (CONSTRAINT id_name)? (PRIMARY KEY | UNIQUE) (CLUSTERED | NONCLUSTERED)? LPAREN column_list RPAREN
+    | (CONSTRAINT id_name)? FOREIGN KEY LPAREN column_list RPAREN REFERENCES table_name LPAREN column_list RPAREN
+    | (CONSTRAINT id_name)? CHECK LPAREN expression RPAREN
     ;
 
 data_type
@@ -72,9 +85,10 @@ data_type
 column_constraint
     : NOT NULL
     | NULL
-    | PRIMARY KEY
+    | PRIMARY KEY (CLUSTERED | NONCLUSTERED)?  // تم السماح بـ CLUSTERED هنا أيضاً
     | DEFAULT expression
     | IDENTITY (LPAREN INT COMMA INT RPAREN)?
+    | REFERENCES table_name LPAREN id_name RPAREN // إضافة بسيطة لدعم المفاتيح الأجنبية المضمنة
     ;
 
 alter_statement
@@ -238,24 +252,23 @@ with_expression
 // ==========================================
 
 expression
-    : LPAREN expression RPAREN                       # ParenExpr
-    | NOT expression                                 # NotExpr
-    | expression (STAR | SLASH | PERCENT) expression # MultiplicativeExpr
-    | expression (PLUS | MINUS) expression           # AdditiveExpr
-    // تمت إضافة BETWEEN هنا
-    | expression (NOT)? BETWEEN expression AND expression # BetweenExpr
+    : LPAREN expression RPAREN                             # ParenExpr
+    | (PLUS | MINUS) expression                            # UnaryExpr  // <--- تمت الإضافة هنا
+    | NOT expression                                       # NotExpr
+    | expression (STAR | SLASH | PERCENT) expression       # MultiplicativeExpr
+    | expression (PLUS | MINUS) expression                 # AdditiveExpr
+    | expression (NOT)? BETWEEN expression AND expression  # BetweenExpr
     | expression (EQ | NEQ | GT | LT | GE | LE) expression # ComparisonExpr
     | expression (NOT)? LIKE expression                    # LikeExpr
-    | expression (AND | OR) expression               # LogicalExpr
-    | expression IS NULL                             # IsNullExpr
-    | expression IS NOT NULL                         # IsNotNullExpr
+    | expression (AND | OR) expression                     # LogicalExpr
+    | expression IS NULL                                   # IsNullExpr
+    | expression IS NOT NULL                               # IsNotNullExpr
     | expression (NOT)? IN LPAREN (expression_list | select_statement) RPAREN # InExpr
-    | EXISTS LPAREN select_statement RPAREN          # ExistsExpr
-    // تمت إضافة هذا السطر لدعم (SELECT ...) كقيمة
-    | LPAREN select_statement RPAREN                 # ScalarSubqueryExpr 
+    | EXISTS LPAREN select_statement RPAREN                # ExistsExpr
+    | LPAREN select_statement RPAREN                       # ScalarSubqueryExpr 
     | CASE (WHEN expression THEN expression)+ (ELSE expression)? END # CaseExpr
-    | function_call                                  # FunctionCallExpr
-    | atom                                           # AtomExpr
+    | function_call                                        # FunctionCallExpr
+    | atom                                                 # AtomExpr
     ;
 
 function_call

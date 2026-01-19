@@ -91,6 +91,14 @@ GROUP  : G R O U P ;
 BY     : B Y ;
 HAVING : H A V I N G ;
 
+CLUSTERED : C L U S T E R E D;
+NONCLUSTERED : N O N C L U S T E R E D;
+CONSTRAINT : C O N S T R A I N T;
+REFERENCES : R E F E R E N C E S;
+UNIQUE : U N I Q U E;
+CHECK : C H E C K;
+FOREIGN : F O R E I G N;
+
 ORDER : O R D E R ;
 ASC   : A S C ;
 DESC  : D E S C ;

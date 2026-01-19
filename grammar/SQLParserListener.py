@@ -80,12 +80,21 @@ class SQLParserListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by SQLParser#column_def_list.
-    def enterColumn_def_list(self, ctx:SQLParser.Column_def_listContext):
+    # Enter a parse tree produced by SQLParser#table_element_list.
+    def enterTable_element_list(self, ctx:SQLParser.Table_element_listContext):
         pass
 
-    # Exit a parse tree produced by SQLParser#column_def_list.
-    def exitColumn_def_list(self, ctx:SQLParser.Column_def_listContext):
+    # Exit a parse tree produced by SQLParser#table_element_list.
+    def exitTable_element_list(self, ctx:SQLParser.Table_element_listContext):
+        pass
+
+
+    # Enter a parse tree produced by SQLParser#table_element.
+    def enterTable_element(self, ctx:SQLParser.Table_elementContext):
+        pass
+
+    # Exit a parse tree produced by SQLParser#table_element.
+    def exitTable_element(self, ctx:SQLParser.Table_elementContext):
         pass
 
 
@@ -95,6 +104,15 @@ class SQLParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by SQLParser#column_def.
     def exitColumn_def(self, ctx:SQLParser.Column_defContext):
+        pass
+
+
+    # Enter a parse tree produced by SQLParser#table_constraint.
+    def enterTable_constraint(self, ctx:SQLParser.Table_constraintContext):
+        pass
+
+    # Exit a parse tree produced by SQLParser#table_constraint.
+    def exitTable_constraint(self, ctx:SQLParser.Table_constraintContext):
         pass
 
 
@@ -446,6 +464,15 @@ class SQLParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by SQLParser#AtomExpr.
     def exitAtomExpr(self, ctx:SQLParser.AtomExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SQLParser#UnaryExpr.
+    def enterUnaryExpr(self, ctx:SQLParser.UnaryExprContext):
+        pass
+
+    # Exit a parse tree produced by SQLParser#UnaryExpr.
+    def exitUnaryExpr(self, ctx:SQLParser.UnaryExprContext):
         pass
 
 
