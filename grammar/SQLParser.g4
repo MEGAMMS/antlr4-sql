@@ -86,6 +86,7 @@ column_constraint
     : NOT NULL
     | NULL
     | PRIMARY KEY (CLUSTERED | NONCLUSTERED)?  // تم السماح بـ CLUSTERED هنا أيضاً
+    | UNIQUE 
     | DEFAULT expression
     | IDENTITY (LPAREN INT COMMA INT RPAREN)?
     | REFERENCES table_name LPAREN id_name RPAREN // إضافة بسيطة لدعم المفاتيح الأجنبية المضمنة

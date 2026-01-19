@@ -199,7 +199,9 @@ UNCLOSED_STRING_EOF
 LINE_COMMENT : '--' ~[\r\n]* -> skip ;
 BLOCK_COMMENT_START : '/*' -> pushMode(COMMENT), skip ;
 
-mode COMMENT;
+mode COMMENT; // wrong mode COMMENT;
+  // BLOCK_COMMENT_END  : '*/' -> popMode, skip ;
+  // COMMENT_TEXT        : .    -> skip ;
   NESTED_BLOCK_START : '/*' -> pushMode(COMMENT), skip ;
   BLOCK_COMMENT_END  : '*/' -> popMode, skip ;
   COMMENT_TEXT        : .    -> skip ;

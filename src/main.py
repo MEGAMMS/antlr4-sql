@@ -8,8 +8,8 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 from antlr4 import FileStream, CommonTokenStream
-from grammar.SQLLexer import SQLLexer
-from grammar.SQLParser import SQLParser
+from src.antlr_generated.SQLLexer import SQLLexer
+from src.antlr_generated.SQLParser import SQLParser
 
 # 2. إنشاء صنف بسيط لعد الأخطاء
 class ErrorCounter(ErrorListener):
@@ -49,7 +49,7 @@ def main():
     # 2. مرحلة التحليل النحوي (Parsing)
     print("✅ Lexer finished successfully. Starting Parser...")
     parser = SQLParser(stream)
-    tree = parser.root()
+    tree = parser.sql_script() 
 
     # 3. التحقق من أخطاء البارسـر (هنا الدالة موجودة بشكل طبيعي)
     if parser.getNumberOfSyntaxErrors() > 0:
