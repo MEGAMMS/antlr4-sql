@@ -10,6 +10,7 @@ sys.path.insert(0, parent_dir)
 from antlr4 import FileStream, CommonTokenStream
 from src.antlr_generated.SQLLexer import SQLLexer
 from src.antlr_generated.SQLParser import SQLParser
+from tree_printer import print_parse_tree, print_full_tree, print_tree_text
 
 # 2. إنشاء صنف بسيط لعد الأخطاء
 class ErrorCounter(ErrorListener):
@@ -57,6 +58,37 @@ def main():
     else:
         print("✅ Parsed Successfully!")
         print(tree.toStringTree(recog=parser))
+    
+
+     
+    # 3. طباعة Parse Tree
+    print("\n" + "=" * 60)
+    print("🌳 نتائج التحليل")
+    print("=" * 60)
+    
+    # خيارات الطباعة
+    if 1:
+        print("\n1. شجرة مختصرة (عمق 4):")
+        print_parse_tree(tree, parser, max_depth=4)
+        
+        print("\n2. عرض نصي محسن:")
+        print_tree_text(tree, parser, max_width=100)
+        
+        # إذا أردت الشجرة كاملة (تحذير: قد تكون طويلة)
+        # print("\n3. الشجرة الكاملة:")
+        # print_full_tree(tree, parser)
+    else:
+        print("\n📊 Parse Tree (النسخة الأساسية):")
+        print("=" * 60)
+        tree_str = tree.toStringTree(recog=parser)
+        # تقسيم النص الطويل
+        max_line = 100
+        for i in range(0, len(tree_str), max_line):
+            print(tree_str[i:i+max_line])
+        print("=" * 60)
+    
+    print(f"\n✅ تم تحليل {input_file} بنجاح!")
+
 
 if __name__ == "__main__":
     main()
