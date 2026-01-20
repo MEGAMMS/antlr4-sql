@@ -1,15 +1,17 @@
-# ast_nodes.py
+"""
+"""
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 
 # ========== Base Classes ==========
 class ASTNode:
-    def accept(self, visitor):
-        """دلالة Visitor Pattern"""
-        method_name = f'visit_{self.__class__.__name__}'
-        method = getattr(visitor, method_name, visitor.visit_generic)
-        return method(self)
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}()"
 
 @dataclass
 class Statement(ASTNode):
@@ -35,17 +37,17 @@ class ColumnDefinition:
 @dataclass
 class DataType:
     name: str
-    params: List[int] = field(default_factory=list)  
+    params: List[int] = field(default_factory=list)
 
 @dataclass
 class ColumnConstraint:
-    type: str  # 'NOT_NULL', 'PRIMARY_KEY', 'UNIQUE', 'DEFAULT', 'IDENTITY', 'REFERENCES'
+    type: str
     value: Optional[Expression] = None
     name: Optional[str] = None
 
 @dataclass
 class TableConstraint:
-    type: str  # 'PRIMARY_KEY', 'FOREIGN_KEY', 'UNIQUE', 'CHECK'
+    type: str
     columns: List[str]
     name: Optional[str] = None
     ref_table: Optional[str] = None
@@ -71,7 +73,7 @@ class SelectItem:
 
 @dataclass
 class TableSource:
-    source: Union[str, 'SelectStatement']  
+    source: Union[str, 'SelectStatement']
     alias: Optional[str] = None
 
 @dataclass
@@ -95,7 +97,7 @@ class UpdateStatement(Statement):
 @dataclass
 class Assignment:
     column: str
-    operator: str  # '=', '+=', '-=', etc.
+    operator: str
     value: Expression
 
 @dataclass
@@ -118,7 +120,7 @@ class UnaryExpression(Expression):
 @dataclass
 class Literal(Expression):
     value: Union[str, int, float, bool, None]
-    type: str  # 'STRING', 'INT', 'FLOAT', 'BOOLEAN', 'NULL'
+    type: str
 
 @dataclass
 class ColumnReference(Expression):
@@ -127,46 +129,12 @@ class ColumnReference(Expression):
 
 @dataclass
 class VariableReference(Expression):
-    name: str  # @local أو @@global
+    name: str
 
 @dataclass
 class FunctionCall(Expression):
     name: str
     arguments: List[Expression] = field(default_factory=list)
-
-@dataclass
-class CaseExpression(Expression):
-    cases: List['CaseWhen']
-    else_result: Optional[Expression] = None
-
-@dataclass
-class CaseWhen:
-    condition: Expression
-    result: Expression
-
-@dataclass
-class InExpression(Expression):
-    value: Expression
-    items: Union[List[Expression], SelectStatement]
-    not_in: bool = False
-
-@dataclass
-class BetweenExpression(Expression):
-    value: Expression
-    lower: Expression
-    upper: Expression
-    not_between: bool = False
-
-@dataclass
-class LikeExpression(Expression):
-    value: Expression
-    pattern: Expression
-    not_like: bool = False
-
-@dataclass
-class IsNullExpression(Expression):
-    value: Expression
-    not_null: bool = False
 
 # ========== Control Flow ==========
 @dataclass
@@ -174,15 +142,6 @@ class IfStatement(Statement):
     condition: Expression
     then_branch: List[Statement]
     else_branch: Optional[List[Statement]] = None
-
-@dataclass
-class BeginEndBlock(Statement):
-    statements: List[Statement]
-
-@dataclass
-class TryCatchBlock(Statement):
-    try_block: List[Statement]
-    catch_block: List[Statement]
 
 # ========== Variable Declaration ==========
 @dataclass
@@ -209,9 +168,3 @@ class UseStatement(Statement):
 @dataclass
 class PrintStatement(Statement):
     expression: Expression
-
-@dataclass
-class ExecuteStatement(Statement):
-    proc_name: str
-    arguments: List[Expression] = field(default_factory=list)
-    return_var: Optional[str] = None

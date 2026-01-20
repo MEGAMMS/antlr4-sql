@@ -1,19 +1,38 @@
-# ast_builder.py
+import sys
+import os
 
-from antlr4 import ParseTreeVisitor
-from antlr4.tree.Tree import TerminalNodeImpl
+# إضافة المسار للوصول إلى antlr_generated
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../src/antlr_generated'))
 
+from antlr4 import *
+from src.antlr_generated.SQLParserVisitor import SQLParserVisitor
 from src.antlr_generated.SQLParser import SQLParser
-from ast_nodes import *
 
-class ASTBuilder(ParseTreeVisitor):
+from .ast_nodes import *
+
+class ASTBuilder(SQLParserVisitor):
     
     def __init__(self):
         super().__init__()
     
-    # ========== Visit Methods ==========
+    # ========== Helper Methods ==========
+    def _get_text(self, ctx):
+        if hasattr(ctx, 'getText'):
+            return ctx.getText()
+        return str(ctx)
     
-    def visitSql_script(self, ctx: SQLParser.Sql_scriptContext):
+    def _visit_children(self, ctx):
+        """زيارة جميع الأطفال"""
+        results = []
+        if hasattr(ctx, 'children') and ctx.children:
+            for child in ctx.children:
+                result = self.visit(child)
+                if result:
+                    results.append(result)
+        return results
+    
+    # ========== Root Rules ==========
+    def visitSql_script(self, ctx):
         statements = []
         if ctx.batch():
             for batch in ctx.batch():
@@ -24,7 +43,7 @@ class ASTBuilder(ParseTreeVisitor):
                     statements.append(batch_statements)
         return statements
     
-    def visitStatementBatch(self, ctx: SQLParser.StatementBatchContext):
+    def visitStatementBatch(self, ctx):
         statements = []
         for stmt in ctx.sql_statement():
             result = self.visit(stmt)
@@ -32,7 +51,8 @@ class ASTBuilder(ParseTreeVisitor):
                 statements.append(result)
         return statements
     
-    def visitCreate_statement(self, ctx: SQLParser.Create_statementContext):
+    # ========== DDL Statements ==========
+    def visitCreate_statement(self, ctx):
         table_name = self._get_text(ctx.table_name())
         
         columns = []
@@ -46,33 +66,37 @@ class ASTBuilder(ParseTreeVisitor):
                 elif isinstance(result, TableConstraint):
                     constraints.append(result)
         
-        return CreateTableStatement(table_name, columns, constraints)
+        return CreateTableStatement(table_name=table_name, columns=columns, constraints=constraints)
     
-    def visitColumn_def(self, ctx: SQLParser.Column_defContext):
+    def visitColumn_def(self, ctx):
         col_name = self._get_text(ctx.id_name())
-        data_type = self.visit(ctx.data_type()) if ctx.data_type() else None
+        
+        data_type = None
+        if ctx.data_type():
+            data_type = self.visit(ctx.data_type())
         
         constraints = []
         if ctx.column_constraint():
-            for constr_ctx in ctx.column_constraint():
-                constraint = self.visit(constr_ctx)
+            for constr in ctx.column_constraint():
+                constraint = self.visit(constr)
                 if constraint:
                     constraints.append(constraint)
         
-        return ColumnDefinition(col_name, data_type, constraints)
+        return ColumnDefinition(name=col_name, data_type=data_type, constraints=constraints)
     
-    def visitData_type(self, ctx: SQLParser.Data_typeContext):
+    def visitData_type(self, ctx):
         type_name = self._get_text(ctx.id_name())
         params = []
         
         if ctx.INT():
-            params = [int(ctx.INT(0).getText())]
-            if ctx.COMMA() and ctx.INT(1):
+            params.append(int(ctx.INT().getText()))
+            if ctx.COMMA() and len(ctx.INT()) > 1:
                 params.append(int(ctx.INT(1).getText()))
         
-        return DataType(type_name, params)
+        return DataType(name=type_name, params=params)
     
-    def visitSelect_statement(self, ctx: SQLParser.Select_statementContext):
+    # ========== DML Statements ==========
+    def visitSelect_statement(self, ctx):
         # SELECT List
         select_items = []
         if ctx.select_list():
@@ -86,17 +110,7 @@ class ASTBuilder(ParseTreeVisitor):
         # WHERE Clause
         where_clause = None
         if ctx.expression():
-            where_clause = self.visit(ctx.expression())
-        
-        # GROUP BY
-        group_by = []
-        if ctx.group_list():
-            group_by = self.visit(ctx.group_list())
-        
-        # HAVING
-        having_clause = None
-        if ctx.expression():
-            having_clause = self.visit(ctx.expression())
+            where_clause = self.visit(ctx.expression(0))
         
         # ORDER BY
         order_by = []
@@ -108,103 +122,104 @@ class ASTBuilder(ParseTreeVisitor):
         top = int(ctx.INT().getText()) if ctx.TOP() and ctx.INT() else None
         
         return SelectStatement(
-            select_items, from_clause, where_clause,
-            group_by, having_clause, order_by,
-            distinct, top
+            select_list=select_items,
+            from_clause=from_clause,
+            where_clause=where_clause,
+            order_by=order_by,
+            distinct=distinct,
+            top=top
         )
     
-    def visitSelect_list(self, ctx: SQLParser.Select_listContext):
+    def visitSelect_list(self, ctx):
         items = []
         if ctx.STAR():
-            items.append(SelectItem(ColumnReference("*")))
+            items.append(SelectItem(expression=ColumnReference("*")))
         elif ctx.select_item():
-            for item_ctx in ctx.select_item():
-                result = self.visit(item_ctx)
+            for item in ctx.select_item():
+                result = self.visit(item)
                 if result:
                     items.append(result)
         return items
     
-    def visitSelectExpression(self, ctx: SQLParser.SelectExpressionContext):
+    def visitSelectExpression(self, ctx):
         expr = self.visit(ctx.expression())
         alias = self._get_text(ctx.id_name()) if ctx.id_name() else None
-        return SelectItem(expr, alias)
+        return SelectItem(expression=expr, alias=alias)
     
-    def visitExpression(self, ctx: SQLParser.ExpressionContext):
-        # Binary Operators
-        if ctx.getChildCount() == 3 and ctx.getChild(1) not in [TerminalNodeImpl]:
-            left = self.visit(ctx.expression(0))
-            right = self.visit(ctx.expression(1))
-            op = self._get_text(ctx.getChild(1))
-            
-            if ctx.STAR() or ctx.SLASH() or ctx.PERCENT():
-                return BinaryExpression(left, op, right)
-            elif ctx.PLUS() or ctx.MINUS():
-                return BinaryExpression(left, op, right)
-            elif ctx.EQ() or ctx.NEQ() or ctx.GT() or ctx.LT() or ctx.GE() or ctx.LE():
-                return BinaryExpression(left, op, right)
-            elif ctx.AND() or ctx.OR():
-                return BinaryExpression(left, op, right)
+    def visitTable_source(self, ctx):
+        if ctx.table_name():
+            source = self._get_text(ctx.table_name())
+        elif ctx.select_statement():
+            source = self.visit(ctx.select_statement())
+        else:
+            source = None
         
-        # Unary Operators
-        elif ctx.getChildCount() == 2:
-            if ctx.PLUS() or ctx.MINUS():
-                return UnaryExpression(self._get_text(ctx.getChild(0)), self.visit(ctx.expression(0)))
-            elif ctx.NOT():
-                return UnaryExpression('NOT', self.visit(ctx.expression(0)))
-        
-        # Parentheses
-        elif ctx.LPAREN() and ctx.RPAREN():
-            return self.visit(ctx.expression(0))
-        
-        # Function Call
-        elif ctx.function_call():
-            return self.visit(ctx.function_call())
-        
-        # Atom
-        elif ctx.atom():
-            return self.visit(ctx.atom())
-        
-        # TODO: Handle other expression types
-        
-        return None
+        alias = self._get_text(ctx.id_name()) if ctx.id_name() else None
+        return TableSource(source=source, alias=alias)
     
-    def visitAtom(self, ctx: SQLParser.AtomContext):
-        if ctx.INT():
-            return Literal(int(ctx.INT().getText()), 'INT')
-        elif ctx.FLOAT():
-            return Literal(float(ctx.FLOAT().getText()), 'FLOAT')
-        elif ctx.STRING():
-            text = ctx.STRING().getText()[1:-1]  # Remove quotes
-            return Literal(text, 'STRING')
-        elif ctx.NULL():
-            return Literal(None, 'NULL')
-        elif ctx.TRUE():
-            return Literal(True, 'BOOLEAN')
-        elif ctx.FALSE():
-            return Literal(False, 'BOOLEAN')
+    def visitOrder_list(self, ctx):
+        items = []
+        expressions = ctx.expression()
+        directions = []
+        
+        # جمع الاتجاهات
+        for i in range(len(expressions)):
+            direction = 'ASC'
+            items.append(OrderByItem(
+                expression=self.visit(expressions[i]),
+                direction=direction
+            ))
+        
+        return items
+    
+    # ========== Expressions ==========
+    def visitComparisonExpr(self, ctx):
+        left = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(1))
+        op = ctx.getChild(1).getText()
+        return BinaryExpression(left=left, operator=op, right=right)
+    
+    def visitAdditiveExpr(self, ctx):
+        left = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(1))
+        op = ctx.getChild(1).getText()
+        return BinaryExpression(left=left, operator=op, right=right)
+    
+    def visitMultiplicativeExpr(self, ctx):
+        left = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(1))
+        op = ctx.getChild(1).getText()
+        return BinaryExpression(left=left, operator=op, right=right)
+    
+    def visitAtomExpr(self, ctx):
+        return self.visit(ctx.atom())
+    
+    def visitAtom(self, ctx):
+        if ctx.table_name():
+            return ColumnReference(name=self._get_text(ctx.table_name()))
+        elif ctx.constant():
+            return self.visit(ctx.constant())
         elif ctx.variable():
-            return VariableReference(self._get_text(ctx.variable()))
-        elif ctx.table_name():
-            return ColumnReference(self._get_text(ctx.table_name()))
-        
+            return VariableReference(name=self._get_text(ctx.variable()))
         return None
     
-    def visitFunction_call(self, ctx: SQLParser.Function_callContext):
-        func_name = self._get_text(ctx.id_name())
-        args = []
-        
-        if ctx.expression_list():
-            args = self.visit(ctx.expression_list())
-        
-        return FunctionCall(func_name, args)
+    def visitConstant(self, ctx):
+        if ctx.INT():
+            return Literal(value=int(ctx.INT().getText()), type='INT')
+        elif ctx.FLOAT():
+            return Literal(value=float(ctx.FLOAT().getText()), type='FLOAT')
+        elif ctx.STRING():
+            text = ctx.STRING().getText()[1:-1]  # إزالة الاقتباسات
+            return Literal(value=text, type='STRING')
+        elif ctx.NULL():
+            return Literal(value=None, type='NULL')
+        return None
     
-    def visitExpression_list(self, ctx: SQLParser.Expression_listContext):
-        return [self.visit(expr) for expr in ctx.expression()]
-    
-    def visitInsert_statement(self, ctx: SQLParser.Insert_statementContext):
+    # ========== Other Statements ==========
+    def visitInsert_statement(self, ctx):
         table_name = self._get_text(ctx.table_name())
-        columns = None
         
+        columns = None
         if ctx.column_list():
             columns = [self._get_text(col) for col in ctx.column_list().id_name()]
         
@@ -212,91 +227,39 @@ class ASTBuilder(ParseTreeVisitor):
             values = []
             for expr_list in ctx.expression_list_parens():
                 values.append(self.visit(expr_list.expression_list()))
-            return InsertStatement(table_name, columns, values)
-        elif ctx.select_statement():
-            select_query = self.visit(ctx.select_statement())
-            return InsertStatement(table_name, columns, None, select_query)
+            return InsertStatement(table_name=table_name, columns=columns, values=values)
         
         return None
     
-    def visitUpdate_statement(self, ctx: SQLParser.Update_statementContext):
+    def visitUpdate_statement(self, ctx):
         table_name = self._get_text(ctx.table_name())
         assignments = self.visit(ctx.assignment_list())
         where_clause = self.visit(ctx.expression()) if ctx.expression() else None
-        
-        return UpdateStatement(table_name, assignments, where_clause)
+        return UpdateStatement(table_name=table_name, assignments=assignments, where_clause=where_clause)
     
-    def visitAssignment_list(self, ctx: SQLParser.Assignment_listContext):
-        return [self.visit(assignment) for assignment in ctx.assignment()]
-    
-    def visitAssignment(self, ctx: SQLParser.AssignmentContext):
-        column = self._get_text(ctx.id_name(0))
-        operator = self._get_text(ctx.getChild(1))
-        value = self.visit(ctx.expression())
-        
-        return Assignment(column, operator, value)
-    
-    def visitDelete_statement(self, ctx: SQLParser.Delete_statementContext):
+    def visitDelete_statement(self, ctx):
         table_name = self._get_text(ctx.table_name())
         where_clause = self.visit(ctx.expression()) if ctx.expression() else None
-        
-        return DeleteStatement(table_name, where_clause)
+        return DeleteStatement(table_name=table_name, where_clause=where_clause)
     
-    def visitDeclare_statement(self, ctx: SQLParser.Declare_statementContext):
-        variables = self.visit(ctx.declare_list())
-        return DeclareStatement(variables)
-    
-    def visitDeclare_list(self, ctx: SQLParser.Declare_listContext):
-        return [self.visit(item) for item in ctx.declare_item()]
-    
-    def visitDeclare_item(self, ctx: SQLParser.Declare_itemContext):
-        var_name = self._get_text(ctx.LOCAL_VAR())
-        data_type = self.visit(ctx.data_type()) if ctx.data_type() else None
-        initial_value = self.visit(ctx.expression()) if ctx.expression() else None
-        
-        return VariableDeclaration(var_name, data_type, initial_value)
-    
-    def visitSet_statement(self, ctx: SQLParser.Set_statementContext):
-        variable = self._get_text(ctx.variable())
-        operator = self._get_text(ctx.getChild(1))  # EQ, PLUS_ASSIGN, etc.
-        value = self.visit(ctx.expression())
-        
-        return SetStatement(variable, operator, value)
-    
-    def visitUse_statement(self, ctx: SQLParser.Use_statementContext):
+    def visitUse_statement(self, ctx):
         database = self._get_text(ctx.id_name())
-        return UseStatement(database)
+        return UseStatement(database=database)
     
-    def visitPrint_statement(self, ctx: SQLParser.Print_statementContext):
+    def visitPrint_statement(self, ctx):
         expr = self.visit(ctx.expression())
-        return PrintStatement(expr)
+        return PrintStatement(expression=expr)
     
-    def visitIf_statement(self, ctx: SQLParser.If_statementContext):
-        condition = self.visit(ctx.expression())
-        then_stmt = self.visit(ctx.sql_statement(0))
-        else_stmt = self.visit(ctx.sql_statement(1)) if ctx.ELSE() else None
-        
-        then_branch = [then_stmt] if then_stmt else []
-        else_branch = [else_stmt] if else_stmt else []
-        
-        return IfStatement(condition, then_branch, else_branch)
+    def visitDeclare_statement(self, ctx):
+        variables = self.visit(ctx.declare_list())
+        return DeclareStatement(variables=variables)
     
-    # ========== Helper Methods ==========
+    def visitSet_statement(self, ctx):
+        variable = self._get_text(ctx.variable())
+        operator = ctx.getChild(1).getText()
+        value = self.visit(ctx.expression())
+        return SetStatement(variable=variable, operator=operator, value=value)
     
-    def _get_text(self, ctx):
-        if hasattr(ctx, 'getText'):
-            return ctx.getText()
-        return str(ctx)
-    
-    def visit_generic(self, node):
-        if hasattr(node, 'children') and node.children:
-            results = []
-            for child in node.children:
-                result = self.visit(child)
-                if result:
-                    results.append(result)
-            return results if len(results) > 1 else (results[0] if results else None)
-        return None
-    
-    def visitTerminal(self, node):
+    # ========== Default Visit ==========
+    def defaultResult(self):
         return None
