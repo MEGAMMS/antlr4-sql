@@ -87,12 +87,14 @@ class ASTBuilder(SQLParserVisitor):
     def visitData_type(self, ctx):
         type_name = self._get_text(ctx.id_name())
         params = []
-        
-        if ctx.INT():
-            params.append(int(ctx.INT().getText()))
-            if ctx.COMMA() and len(ctx.INT()) > 1:
-                params.append(int(ctx.INT(1).getText()))
-        
+
+        if ctx.LPAREN():
+            int_tokens = ctx.INT()  
+            if int_tokens and len(int_tokens) > 0:
+                params.append(int(int_tokens[0].getText()))
+                if len(int_tokens) > 1:
+                    params.append(int(int_tokens[1].getText()))
+    
         return DataType(name=type_name, params=params)
     
     # ========== DML Statements ==========
