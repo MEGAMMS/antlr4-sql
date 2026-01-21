@@ -28,3 +28,10 @@ class ASTBuilder(SQLParserVisitor):
                 statements.append(result)
         return statements
     
+    def visitStatementBatch(self, ctx):
+        statements = []
+        for stmt in ctx.sql_statement():
+            node = self.visit(stmt)
+            if node:
+                statements.append(node)
+        return statements
