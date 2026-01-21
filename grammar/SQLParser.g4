@@ -26,6 +26,7 @@ batch
 sql_statement
     : ddl_statement
     | dml_statement
+    | cursor_statement 
     | control_flow_statement
     | print_statement
     | declare_statement
@@ -206,8 +207,14 @@ delete_statement
 // ==========================================
 
 declare_statement
-    : DECLARE declare_list
+    : DECLARE (cursor_declare_statement | declare_list)
     ;
+
+cursor_declare_statement
+    : id_name CURSOR FOR select_statement
+    ;
+
+
 
 declare_list
     : declare_item (COMMA declare_item)*
@@ -224,6 +231,34 @@ declare_item
 set_statement
     : SET variable (EQ | PLUS_ASSIGN | MINUS_ASSIGN | STAR_ASSIGN | SLASH_ASSIGN | PERCENT_ASSIGN) expression
     ;
+
+cursor_statement
+    : open_cursor_statement
+    | fetch_cursor_statement
+    | close_cursor_statement
+    | deallocate_cursor_statement
+    ;
+
+open_cursor_statement
+    : OPEN id_name
+    ;
+
+fetch_cursor_statement
+    : FETCH (NEXT)? FROM id_name (INTO variable_list)?
+    ;
+
+variable_list
+    : variable (COMMA variable)*
+    ;
+
+close_cursor_statement
+    : CLOSE id_name
+    ;
+
+deallocate_cursor_statement
+    : DEALLOCATE id_name
+    ;
+
 
 // ==========================================
 // Control Flow & Others
@@ -245,7 +280,11 @@ execute_statement
     ;
 
 with_expression
-    : WITH id_name AS LPAREN select_statement RPAREN
+    : WITH cte_definition (COMMA cte_definition)*
+    ;
+
+cte_definition
+    : id_name (LPAREN column_list RPAREN)? AS LPAREN select_statement RPAREN
     ;
 
 // ==========================================
@@ -253,27 +292,55 @@ with_expression
 // ==========================================
 
 expression
-    : LPAREN expression RPAREN                             # ParenExpr
-    | (PLUS | MINUS) expression                            # UnaryExpr  // <--- تمت الإضافة هنا
-    | NOT expression                                       # NotExpr
-    | expression (STAR | SLASH | PERCENT) expression       # MultiplicativeExpr
-    | expression (PLUS | MINUS) expression                 # AdditiveExpr
-    | expression (NOT)? BETWEEN expression AND expression  # BetweenExpr
-    | expression (EQ | NEQ | GT | LT | GE | LE) expression # ComparisonExpr
-    | expression (NOT)? LIKE expression                    # LikeExpr
-    | expression (AND | OR) expression                     # LogicalExpr
-    | expression IS NULL                                   # IsNullExpr
-    | expression IS NOT NULL                               # IsNotNullExpr
-    | expression (NOT)? IN LPAREN (expression_list | select_statement) RPAREN # InExpr
-    | EXISTS LPAREN select_statement RPAREN                # ExistsExpr
-    | LPAREN select_statement RPAREN                       # ScalarSubqueryExpr 
-    | CASE (WHEN expression THEN expression)+ (ELSE expression)? END # CaseExpr
-    | function_call                                        # FunctionCallExpr
-    | atom                                                 # AtomExpr
+    : logical_or_expression
+    ;
+
+logical_or_expression
+    : logical_and_expression (OR logical_and_expression)*   # LogicalOrExpr
+    ;
+
+logical_and_expression
+    : not_expression (AND not_expression)*                  # LogicalAndExpr
+    ;
+
+not_expression
+    : NOT not_expression                                    # NotExpr
+    | comparison_expression                                 # PredicateExpr
+    ;
+
+comparison_expression
+    : additive_expression (EQ | NEQ | GT | LT | GE | LE) additive_expression        # ComparisonExpr
+    | additive_expression (NOT)? BETWEEN additive_expression AND additive_expression # BetweenExpr
+    | additive_expression (NOT)? IN LPAREN (expression_list | select_statement) RPAREN # InExpr
+    | additive_expression (NOT)? LIKE additive_expression                            # LikeExpr
+    | additive_expression IS NOT? NULL                                               # IsNullExpr
+    | additive_expression                                                            # ValueExpr
+    ;
+
+additive_expression
+    : multiplicative_expression ((PLUS | MINUS) multiplicative_expression)*          # AdditiveExpr
+    ;
+
+multiplicative_expression
+    : unary_expression ((STAR | SLASH | PERCENT) unary_expression)*                  # MultiplicativeExpr
+    ;
+
+unary_expression
+    : (PLUS | MINUS) unary_expression                                                # UnaryExpr
+    | primary_expression
+    ;
+
+primary_expression
+    : LPAREN expression RPAREN                                                       # ParenExpr
+    | LPAREN select_statement RPAREN                                                 # ScalarSubqueryExpr
+    | EXISTS LPAREN select_statement RPAREN                                          # ExistsExpr
+    | CASE (WHEN expression THEN expression)+ (ELSE expression)? END                 # CaseExpr
+    | function_call                                                                  # FunctionCallExpr
+    | atom                                                                           # AtomExpr
     ;
 
 function_call
-    : id_name LPAREN (expression_list)? RPAREN
+    : id_name LPAREN (STAR | expression_list)? RPAREN
     ;
 
 atom

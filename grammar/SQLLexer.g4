@@ -50,6 +50,14 @@ fragment HEXDIGIT : [0-9a-fA-F];
 DECLARE : D E C L A R E ;
 GO      : G O ;
 
+CURSOR  : C U R S O R ;
+OPEN    : O P E N ;
+FETCH   : F E T C H ;
+NEXT    : N E X T ;
+CLOSE   : C L O S E ;
+DEALLOCATE : D E A L L O C A T E ;
+FOR     : F O R ;
+
 TRUNCATE : T R U N C A T E;
 
 SELECT   : S E L E C T ;
