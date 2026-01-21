@@ -47,6 +47,9 @@ dml_statement
     | insert_statement
     | update_statement
     | delete_statement
+    | with_expression insert_statement
+    | with_expression update_statement
+    | with_expression delete_statement
     ;
 
 
@@ -327,7 +330,7 @@ multiplicative_expression
 
 unary_expression
     : (PLUS | MINUS) unary_expression                                                # UnaryExpr
-    | primary_expression
+    | primary_expression                                                             # PrimaryUnaryExpr
     ;
 
 primary_expression
@@ -362,6 +365,7 @@ id_name
     | BRACKET_ID
     | DQUOTED_ID
     | STRING
+    | TEMP_ID
     ;
 
 constant
