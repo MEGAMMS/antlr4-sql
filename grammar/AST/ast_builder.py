@@ -35,3 +35,8 @@ class ASTBuilder(SQLParserVisitor):
             if node:
                 statements.append(node)
         return statements
+
+    def visitSql_statement(self, ctx):
+        if ctx.select_statement():
+            return self.visit(ctx.select_statement())
+        return None
