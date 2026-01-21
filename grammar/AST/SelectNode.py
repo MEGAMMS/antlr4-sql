@@ -1,4 +1,4 @@
-from ast_nodes import ASTNode
+from .ast_nodes import ASTNode
 
 class SelectNode(ASTNode):
     def __init__(self, select_list, from_clause=None, where_clause=None, order_by=None):

@@ -2,15 +2,18 @@ from antlr4 import *
 from src.antlr_generated.SQLParserVisitor import SQLParserVisitor
 from src.antlr_generated.SQLParser import SQLParser
 
-from .ast_nodes import (
-    ProgramNode,
-    SelectNode,
-    IdentifierNode,
-    LiteralNode,
-    BinaryExpressionNode,
-    UnaryExpressionNode,
-    OrderByNode
-)
+
+from .ast_nodes import ASTNode
+from .ProgramNode import ProgramNode
+from .BinaryExpressionNode import BinaryExpressionNode
+from .ExpressionNode import ExpressionNode
+from .IdentifierNode import IdentifierNode
+from .Literals import LiteralNode
+from .OrderByNode import OrderByNode
+from .SelectNode import SelectNode
+from .TableNode import TableNode
+from .UnaryExpressionNode import UnaryExpressionNode
+
 
 class ASTBuilder(SQLParserVisitor):
 
@@ -36,10 +39,6 @@ class ASTBuilder(SQLParserVisitor):
                 statements.append(node)
         return statements
 
-    def visitSql_statement(self, ctx):
-        if ctx.select_statement():
-            return self.visit(ctx.select_statement())
-        return None
 
     def visitSelect_statement(self, ctx):
         columns = self.visit(ctx.select_list())

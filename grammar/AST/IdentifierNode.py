@@ -1,4 +1,4 @@
-from ast_nodes import ASTNode
+from .ast_nodes import ASTNode
 
 class IdentifierNode(ASTNode):
     def __init__(self, name):

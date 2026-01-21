@@ -1,4 +1,4 @@
-from grammar.AST import ExpressionNode
+from grammar.AST.ExpressionNode import ExpressionNode
 
 
 class UnaryExpressionNode(ExpressionNode):
