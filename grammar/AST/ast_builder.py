@@ -78,7 +78,25 @@ class ASTBuilder(SQLParserVisitor):
 
         return expr
     
-    
+
     def visitTable_source(self, ctx):
         name = ctx.table_name().getText()
         return IdentifierNode(name)
+
+    def visitAdditiveExpr(self, ctx):
+        left = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(1))
+        op = ctx.getChild(1).getText()
+        return BinaryExpressionNode(op, left, right)
+
+    def visitMultiplicativeExpr(self, ctx):
+        left = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(1))
+        op = ctx.getChild(1).getText()
+        return BinaryExpressionNode(op, left, right)
+
+    def visitComparisonExpr(self, ctx):
+        left = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(1))
+        op = ctx.getChild(1).getText()
+        return BinaryExpressionNode(op, left, right)
