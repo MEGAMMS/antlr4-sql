@@ -6,6 +6,8 @@ class UnaryExpressionNode(ExpressionNode):
         self.operator = operator
         self.operand = operand
 
-    def print(self, indent=0):
-        print(f"{self._indent(indent)}UnaryExpr ({self.operator})")
-        self.operand.print(indent + 1)
+    def _extra(self):
+        return f" ({self.operator})"
+
+    def children(self):
+        return [self.operand]

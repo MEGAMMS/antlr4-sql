@@ -4,5 +4,5 @@ class IdentifierNode(ASTNode):
     def __init__(self, name):
         self.name = name
 
-    def print(self, indent=0):
-        print(f"{self._indent(indent)}Identifier: {self.name}")
+    def _extra(self):
+        return f": {self.name}"

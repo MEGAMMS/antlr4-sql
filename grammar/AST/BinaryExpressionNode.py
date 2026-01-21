@@ -7,7 +7,8 @@ class BinaryExpressionNode(ExpressionNode):
         self.left = left
         self.right = right
 
-    def print(self, indent=0):
-        print(f"{self._indent(indent)}BinaryExpr ({self.operator})")
-        self.left.print(indent + 1)
-        self.right.print(indent + 1)
+    def _extra(self):
+        return f" ({self.operator})"
+
+    def children(self):
+        return [self.left, self.right]
