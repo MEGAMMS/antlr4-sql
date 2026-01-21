@@ -304,7 +304,15 @@ class ASTBuilder(SQLParserVisitor):
 
     def visitSelectExpression(self, ctx: SQLParser.SelectExpressionContext):
         expr = self.visit(ctx.expression())
-        alias = self.visit(ctx.id_name()).name if ctx.id_name() else None
+        alias = None
+        if ctx.alias_name():
+            alias_node = self.visit(ctx.alias_name())
+            if hasattr(alias_node, "name"):
+                alias = alias_node.name
+            elif hasattr(alias_node, "value"):
+                alias = alias_node.value
+            else:
+                alias = str(alias_node)
         return SelectItemNode(expr, alias)
 
     def visitTable_source(self, ctx: SQLParser.Table_sourceContext):
@@ -650,6 +658,12 @@ class ASTBuilder(SQLParserVisitor):
 
     def visitId_name(self, ctx: SQLParser.Id_nameContext):
         return IdentifierNode(ctx.getText())
+
+    def visitAlias_name(self, ctx: SQLParser.Alias_nameContext):
+        if ctx.STRING():
+            text = ctx.STRING().getText().strip("'").replace("''", "'")
+            return LiteralNode(text)
+        return self.visit(ctx.id_name())
 
     def _text_from_id(self, ctx):
         return ctx.getText()

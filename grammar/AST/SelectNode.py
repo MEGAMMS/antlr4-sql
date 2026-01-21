@@ -49,3 +49,38 @@ class SelectNode(ASTNode):
             self.having_clause,
             self.order_by,
         ]
+
+    def print(self, indent=0):
+        label = self.__class__.__name__ + self._extra()
+        print(f"{self._indent(indent)}{label}")
+
+        print(f"{self._indent(indent+1)}SELECT")
+        for col in self.select_list:
+            col.print(indent + 2)
+
+        if self.from_clause:
+            print(f"{self._indent(indent+1)}FROM")
+            self.from_clause.print(indent + 2)
+
+        if self.joins:
+            print(f"{self._indent(indent+1)}JOINS")
+            for j in self.joins:
+                j.print(indent + 2)
+
+        if self.where_clause:
+            print(f"{self._indent(indent+1)}WHERE")
+            self.where_clause.print(indent + 2)
+
+        if self.group_by:
+            print(f"{self._indent(indent+1)}GROUP_BY")
+            for g in self.group_by:
+                g.print(indent + 2)
+
+        if self.having_clause:
+            print(f"{self._indent(indent+1)}HAVING")
+            self.having_clause.print(indent + 2)
+
+        if self.order_by:
+            print(f"{self._indent(indent+1)}ORDER_BY")
+            for o in self.order_by:
+                o.print(indent + 2)

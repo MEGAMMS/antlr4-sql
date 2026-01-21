@@ -143,7 +143,7 @@ select_list
 select_item
     : variable (EQ | PLUS_ASSIGN | MINUS_ASSIGN | STAR_ASSIGN | SLASH_ASSIGN | PERCENT_ASSIGN) expression  # SelectVarAssignment
     | id_name EQ expression                                                                                # SelectAliasAssignment
-    | expression (AS? id_name)?                                                                            # SelectExpression
+    | expression (AS? alias_name)?                                                                         # SelectExpression
     ;
 
 table_source
@@ -364,8 +364,12 @@ id_name
     : ID
     | BRACKET_ID
     | DQUOTED_ID
-    | STRING
     | TEMP_ID
+    ;
+
+alias_name
+    : id_name
+    | STRING
     ;
 
 constant
