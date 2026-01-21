@@ -3,11 +3,11 @@
 class ASTPrinter:
     def print(self, node, file=None):
         if node is None:
-            print("🌳 AST: فارغ", file=file)
+            print("🌳 AST: empty", file=file)
             return
 
         print("\n" + "🌳 " * 10, file=file)
-        print("✨ AST (الشجرة المجردة للتركيب)", file=file)
+        print("✨ AST Tree", file=file)
         print("🌳 " * 10, file=file)
 
         if isinstance(node, list):
