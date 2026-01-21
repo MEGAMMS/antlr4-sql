@@ -77,3 +77,8 @@ class ASTBuilder(SQLParserVisitor):
             return IdentifierNode(f"{expr.name} AS {alias}")
 
         return expr
+    
+    
+    def visitTable_source(self, ctx):
+        name = ctx.table_name().getText()
+        return IdentifierNode(name)
