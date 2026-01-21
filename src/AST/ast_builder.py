@@ -3,16 +3,16 @@ from antlr4.tree.Tree import TerminalNode
 from src.antlr_generated.SQLParserVisitor import SQLParserVisitor
 from src.antlr_generated.SQLParser import SQLParser
 
-from grammar.AST.ProgramNode import ProgramNode
-from grammar.AST.SelectNode import SelectNode
-from grammar.AST.TableNode import TableNode
-from grammar.AST.IdentifierNode import IdentifierNode
-from grammar.AST.Literals import LiteralNode
-from grammar.AST.BinaryExpressionNode import BinaryExpressionNode
-from grammar.AST.UnaryExpressionNode import UnaryExpressionNode
-from grammar.AST.OrderByNode import OrderByNode
-from grammar.AST.ExpressionNode import ExpressionNode
-from grammar.AST.statement_nodes import (
+from src.AST.ProgramNode import ProgramNode
+from src.AST.SelectNode import SelectNode
+from src.AST.TableNode import TableNode
+from src.AST.IdentifierNode import IdentifierNode
+from src.AST.Literals import LiteralNode
+from src.AST.BinaryExpressionNode import BinaryExpressionNode
+from src.AST.UnaryExpressionNode import UnaryExpressionNode
+from src.AST.OrderByNode import OrderByNode
+from src.AST.ExpressionNode import ExpressionNode
+from src.AST.statement_nodes import (
     WithNode,
     CteNode,
     SelectItemNode,
@@ -47,7 +47,7 @@ from grammar.AST.statement_nodes import (
     TryCatchNode,
     ExecuteNode,
 )
-from grammar.AST.expression_nodes import (
+from src.AST.expression_nodes import (
     VariableNode,
     StarNode,
     FunctionCallNode,

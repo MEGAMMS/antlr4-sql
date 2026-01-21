@@ -1,4 +1,4 @@
-from grammar.AST.ast_nodes import ASTNode
+from src.AST.ast_nodes import ASTNode
 
 
 class OrderByNode(ASTNode):

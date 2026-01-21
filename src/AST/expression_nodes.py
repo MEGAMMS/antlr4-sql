@@ -1,5 +1,5 @@
-from grammar.AST.ExpressionNode import ExpressionNode
-from grammar.AST.ast_nodes import ASTNode
+from src.AST.ExpressionNode import ExpressionNode
+from src.AST.ast_nodes import ASTNode
 
 
 class VariableNode(ExpressionNode):
