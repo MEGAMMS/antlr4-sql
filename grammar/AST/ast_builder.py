@@ -40,3 +40,23 @@ class ASTBuilder(SQLParserVisitor):
         if ctx.select_statement():
             return self.visit(ctx.select_statement())
         return None
+
+    def visitSelect_statement(self, ctx):
+        columns = self.visit(ctx.select_list())
+        table = self.visit(ctx.table_source())
+
+        where = None
+        if ctx.expression():
+            where = self.visit(ctx.expression(0))
+
+        order_by = []
+        if ctx.order_list():
+            order_by = self.visit(ctx.order_list())
+
+        return SelectNode(
+            columns=columns,
+            table=table,
+            where=where,
+            order_by=order_by
+        )
+
