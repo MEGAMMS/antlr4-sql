@@ -100,3 +100,8 @@ class ASTBuilder(SQLParserVisitor):
         right = self.visit(ctx.expression(1))
         op = ctx.getChild(1).getText()
         return BinaryExpressionNode(op, left, right)
+
+    def visitUnaryExpr(self, ctx):
+        expr = self.visit(ctx.expression(0))
+        op = ctx.getChild(0).getText()
+        return UnaryExpressionNode(op, expr)
