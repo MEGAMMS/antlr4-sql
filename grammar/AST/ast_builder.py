@@ -115,3 +115,30 @@ class ASTBuilder(SQLParserVisitor):
         if ctx.table_name():
             return IdentifierNode(ctx.table_name().getText())
         return None
+
+    def visitConstant(self, ctx):
+        if ctx.INT():
+            return LiteralNode(int(ctx.INT().getText()))
+        if ctx.FLOAT():
+            return LiteralNode(float(ctx.FLOAT().getText()))
+        if ctx.STRING():
+            text = ctx.STRING().getText()[1:-1]
+            return LiteralNode(text)
+        return None
+
+    def visitOrder_list(self, ctx):
+        items = []
+
+        expressions = ctx.expression()
+        for i, expr in enumerate(expressions):
+            direction = "ASC"
+
+            idx = ctx.children.index(expr)
+            if idx + 1 < len(ctx.children):
+                next_token = ctx.children[idx + 1]
+                if next_token.getText().upper() in ("ASC", "DESC"):
+                    direction = next_token.getText().upper()
+
+            items.append(OrderByNode(self.visit(expr), direction))
+
+        return items
