@@ -60,3 +60,20 @@ class ASTBuilder(SQLParserVisitor):
             order_by=order_by
         )
 
+    def visitSelect_list(self, ctx):
+        if ctx.STAR():
+            return [IdentifierNode("*")]
+
+        items = []
+        for item in ctx.select_item():
+            items.append(self.visit(item))
+        return items
+    
+    def visitSelectExpression(self, ctx):
+        expr = self.visit(ctx.expression())
+
+        if ctx.id_name():
+            alias = ctx.id_name().getText()
+            return IdentifierNode(f"{expr.name} AS {alias}")
+
+        return expr
