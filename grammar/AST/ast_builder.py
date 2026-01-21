@@ -105,3 +105,13 @@ class ASTBuilder(SQLParserVisitor):
         expr = self.visit(ctx.expression(0))
         op = ctx.getChild(0).getText()
         return UnaryExpressionNode(op, expr)
+
+    def visitAtomExpr(self, ctx):
+        return self.visit(ctx.atom())
+
+    def visitAtom(self, ctx):
+        if ctx.constant():
+            return self.visit(ctx.constant())
+        if ctx.table_name():
+            return IdentifierNode(ctx.table_name().getText())
+        return None
