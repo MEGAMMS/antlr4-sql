@@ -1,18 +1,30 @@
-from antlr4 import *
-from antlr4.tree.Tree import TerminalNode
+from __future__ import annotations
+
 from src.antlr_generated.grammar.SQLParserVisitor import SQLParserVisitor
 from src.antlr_generated.grammar.SQLParser import SQLParser
 
-from src.AST.ProgramNode import ProgramNode
-from src.AST.SelectNode import SelectNode
-from src.AST.TableNode import TableNode
-from src.AST.IdentifierNode import IdentifierNode
-from src.AST.Literals import LiteralNode
-from src.AST.BinaryExpressionNode import BinaryExpressionNode
-from src.AST.UnaryExpressionNode import UnaryExpressionNode
-from src.AST.OrderByNode import OrderByNode
-from src.AST.ExpressionNode import ExpressionNode
-from src.AST.statement_nodes import (
+from src.ast_base import ExpressionNode
+from src.ast_expressions import (
+    BinaryExpressionNode,
+    UnaryExpressionNode,
+    VariableNode,
+    StarNode,
+    FunctionCallNode,
+    BetweenExpressionNode,
+    InExpressionNode,
+    LikeExpressionNode,
+    IsNullExpressionNode,
+    ExistsExpressionNode,
+    CaseExpressionNode,
+    WhenClauseNode,
+)
+from src.ast_statements import (
+    ProgramNode,
+    SelectNode,
+    TableNode,
+    IdentifierNode,
+    LiteralNode,
+    OrderByNode,
     WithNode,
     CteNode,
     SelectItemNode,
@@ -47,18 +59,6 @@ from src.AST.statement_nodes import (
     IfStatementNode,
     TryCatchNode,
     ExecuteNode,
-)
-from src.AST.expression_nodes import (
-    VariableNode,
-    StarNode,
-    FunctionCallNode,
-    BetweenExpressionNode,
-    InExpressionNode,
-    LikeExpressionNode,
-    IsNullExpressionNode,
-    ExistsExpressionNode,
-    CaseExpressionNode,
-    WhenClauseNode,
 )
 
 
@@ -261,43 +261,51 @@ class ASTBuilder(SQLParserVisitor):
 
         select_list = self.visit(ctx.select_list())
 
-        from_clause = self.visit(ctx.table_source()) if ctx.table_source() else None
-        joins = [self.visit(j) for j in ctx.join_part()] if ctx.join_part() else []
-        exprs = ctx.expression()
-        expr_idx = 0
+        from_clause = None
+        joins = []
         where_clause = None
+        group_by = []
         having_clause = None
+        order_by = []
+
+        exprs = list(ctx.expression())
+
+        if ctx.table_source():
+            from_clause = self.visit(ctx.table_source())
+        if ctx.join_part():
+            joins = [self.visit(j) for j in ctx.join_part()]
         if ctx.WHERE():
-            where_clause = self.visit(exprs[expr_idx])
-            expr_idx += 1
-        group_by = self.visit(ctx.group_list()) if ctx.GROUP() else []
+            where_clause = self.visit(exprs[0])
+        if ctx.GROUP():
+            group_by = self.visit(ctx.group_list())
         if ctx.HAVING():
-            having_clause = self.visit(exprs[expr_idx])
-        order_by = self.visit(ctx.order_list()) if ctx.order_list() else []
+            having_clause = self.visit(exprs[-1])
+        if ctx.order_list():
+            order_by = self.visit(ctx.order_list())
 
         return SelectNode(
-            select_list,
-            from_clause,
-            joins,
-            where_clause,
-            group_by,
-            having_clause,
-            order_by,
-            distinct,
-            top_value,
-            with_clause,
+            select_list=select_list,
+            from_clause=from_clause,
+            joins=joins,
+            where_clause=where_clause,
+            group_by=group_by,
+            having_clause=having_clause,
+            order_by=order_by,
+            distinct=distinct,
+            top=top_value,
+            with_clause=with_clause,
         )
 
     def visitSelect_list(self, ctx: SQLParser.Select_listContext):
         if ctx.STAR():
             return [StarNode()]
-        return [self.visit(item) for item in ctx.select_item()]
+        return [self.visit(i) for i in ctx.select_item()]
 
     def visitSelectVarAssignment(self, ctx: SQLParser.SelectVarAssignmentContext):
-        variable = self.visit(ctx.variable())
+        var = self.visit(ctx.variable())
         op = ctx.getChild(1).getText()
         expr = self.visit(ctx.expression())
-        return SelectVarAssignNode(variable, op, expr)
+        return SelectVarAssignNode(var, op, expr)
 
     def visitSelectAliasAssignment(self, ctx: SQLParser.SelectAliasAssignmentContext):
         alias = self.visit(ctx.id_name())
@@ -366,77 +374,66 @@ class ASTBuilder(SQLParserVisitor):
     def visitInsert_statement(self, ctx: SQLParser.Insert_statementContext):
         table = self.visit(ctx.table_name())
         columns = self.visit(ctx.column_list()) if ctx.column_list() else []
-        values = []
-        select_query = None
-
         if ctx.VALUES():
-            for value_ctx in ctx.expression_list_parens():
-                values.append(ValueListNode(self.visit(value_ctx.expression_list())))
-        else:
-            select_query = self.visit(ctx.select_statement())
-        return InsertStatement(table, columns, values, select_query)
+            values = [self.visit(v) for v in ctx.expression_list_parens()]
+            return InsertStatement(table, columns, values=values)
+        select_query = self.visit(ctx.select_statement())
+        return InsertStatement(table, columns, select_query=select_query)
+
+    def visitExpression_list_parens(self, ctx: SQLParser.Expression_list_parensContext):
+        return ValueListNode(self.visit(ctx.expression_list()))
 
     def visitColumn_list(self, ctx: SQLParser.Column_listContext):
-        return [self.visit(idc) for idc in ctx.id_name()]
+        return [self.visit(c) for c in ctx.id_name()]
 
     def visitExpression_list(self, ctx: SQLParser.Expression_listContext):
-        return [self.visit(expr) for expr in ctx.expression()]
+        return [self.visit(e) for e in ctx.expression()]
 
     def visitUpdate_statement(self, ctx: SQLParser.Update_statementContext):
         table = self.visit(ctx.table_name())
         assignments = self.visit(ctx.assignment_list())
         where_clause = self.visit(ctx.expression()) if ctx.WHERE() else None
-        return UpdateStatement(table, assignments, where_clause)
+        return UpdateStatement(table, assignments, where_clause=where_clause)
 
     def visitAssignment_list(self, ctx: SQLParser.Assignment_listContext):
         return [self.visit(a) for a in ctx.assignment()]
 
     def visitAssignment(self, ctx: SQLParser.AssignmentContext):
         target = self.visit(ctx.id_name())
-        operator = ctx.getChild(1).getText()
+        op = ctx.getChild(1).getText()
         value = self.visit(ctx.expression())
-        return AssignmentNode(target, operator, value)
+        return AssignmentNode(target, op, value)
 
     def visitDelete_statement(self, ctx: SQLParser.Delete_statementContext):
         table = self.visit(ctx.table_name())
         where_clause = self.visit(ctx.expression()) if ctx.WHERE() else None
-        return DeleteStatement(table, where_clause)
+        return DeleteStatement(table, where_clause=where_clause)
 
-    # Variables and SET/DECLARE --------------------------------------
+    # Variables and control flow -------------------------------------
     def visitDeclare_statement(self, ctx: SQLParser.Declare_statementContext):
         if ctx.cursor_declare_statement():
             return self.visit(ctx.cursor_declare_statement())
-        items = [self.visit(item) for item in ctx.declare_list().declare_item()]
-        return DeclareStatementNode(items)
+        return DeclareStatementNode(self.visit(ctx.declare_list()))
+
+    def visitDeclare_list(self, ctx: SQLParser.Declare_listContext):
+        return [self.visit(item) for item in ctx.declare_item()]
+
+    def visitDeclare_item(self, ctx: SQLParser.Declare_itemContext):
+        name = self.visit(ctx.LOCAL_VAR())
+        data_type = self.visit(ctx.data_type())
+        default_value = self.visit(ctx.expression()) if ctx.expression() else None
+        return DeclaredVariableNode(name, data_type, default_value)
+
+    def visitSet_statement(self, ctx: SQLParser.Set_statementContext):
+        var = self.visit(ctx.variable())
+        op = ctx.getChild(1).getText()
+        expr = self.visit(ctx.expression())
+        return SetStatementNode(var, op, expr)
 
     def visitCursor_declare_statement(self, ctx: SQLParser.Cursor_declare_statementContext):
         name = self.visit(ctx.id_name())
         query = self.visit(ctx.select_statement())
         return CursorDeclareNode(name, query)
-
-    def visitDeclare_item(self, ctx: SQLParser.Declare_itemContext):
-        var = VariableNode(ctx.LOCAL_VAR().getText())
-        data_type = self.visit(ctx.data_type())
-        default_value = self.visit(ctx.expression()) if ctx.expression() else None
-        return DeclaredVariableNode(var, data_type, default_value)
-
-    def visitSet_statement(self, ctx: SQLParser.Set_statementContext):
-        variable = self.visit(ctx.variable())
-        operator = ctx.getChild(2).getText()
-        expression = self.visit(ctx.expression())
-        return SetStatementNode(variable, operator, expression)
-
-    # Cursor statements -----------------------------------------------
-    def visitCursor_statement(self, ctx: SQLParser.Cursor_statementContext):
-        for rule in [
-            ctx.open_cursor_statement,
-            ctx.fetch_cursor_statement,
-            ctx.close_cursor_statement,
-            ctx.deallocate_cursor_statement,
-        ]:
-            if rule():
-                return self.visit(rule())
-        return None
 
     def visitOpen_cursor_statement(self, ctx: SQLParser.Open_cursor_statementContext):
         return OpenCursorNode(self.visit(ctx.id_name()))
@@ -455,81 +452,49 @@ class ASTBuilder(SQLParserVisitor):
     def visitDeallocate_cursor_statement(self, ctx: SQLParser.Deallocate_cursor_statementContext):
         return DeallocateCursorNode(self.visit(ctx.id_name()))
 
-    # Control flow & misc ---------------------------------------------
-    def visitControl_flow_statement(self, ctx: SQLParser.Control_flow_statementContext):
-        if ctx.TRY():
-            in_catch = False
-            try_stmts, catch_stmts = [], []
-            for child in ctx.children:
-                if isinstance(child, TerminalNode) and child.getText().upper() == "CATCH":
-                    in_catch = True
-                if isinstance(child, SQLParser.Sql_statementContext):
-                    node = self.visit(child)
-                    if node:
-                        (catch_stmts if in_catch else try_stmts).append(node)
-            return TryCatchNode(BlockNode(try_stmts), BlockNode(catch_stmts))
-        if ctx.BEGIN():
-            statements = self._collect_statements(ctx.sql_statement())
-            return BlockNode(statements)
-        if ctx.IF():
-            stmts = ctx.sql_statement()
-            condition = self.visit(ctx.expression())
-            then_stmt = self.visit(stmts[0])
-            else_stmt = self.visit(stmts[1]) if len(stmts) > 1 else None
-            then_block = then_stmt if isinstance(then_stmt, BlockNode) else BlockNode([then_stmt])
-            else_block = else_stmt if isinstance(else_stmt, BlockNode) else (BlockNode([else_stmt]) if else_stmt else None)
-            return IfStatementNode(condition, then_block, else_block)
-        return None
+    def visitBlock(self, ctx: SQLParser.BlockContext):
+        return BlockNode(self.visit(ctx.statementBatch()))
 
-    def _collect_statements(self, stmt_list):
-        statements = []
-        for stmt in stmt_list:
-            res = self.visit(stmt)
-            if res is None:
-                continue
-            if isinstance(res, list):
-                statements.extend(res)
-            else:
-                statements.append(res)
-        return statements
+    def visitIf_statement(self, ctx: SQLParser.If_statementContext):
+        condition = self.visit(ctx.expression())
+        then_block = self.visit(ctx.sql_statement(0))
+        else_block = self.visit(ctx.sql_statement(1)) if ctx.ELSE() else None
+        return IfStatementNode(condition, then_block, else_block)
+
+    def visitTry_catch(self, ctx: SQLParser.Try_catchContext):
+        try_block = self.visit(ctx.block(0))
+        catch_block = self.visit(ctx.block(1))
+        return TryCatchNode(try_block, catch_block)
+
+    def visitExecute_statement(self, ctx: SQLParser.Execute_statementContext):
+        output_var = self.visit(ctx.variable()) if ctx.variable() and ctx.EQ() else None
+        target = self.visit(ctx.table_name()) if ctx.table_name() else self.visit(ctx.variable(0))
+        args = []
+        if ctx.expression():
+            args = [self.visit(e) for e in ctx.expression()]
+        return ExecuteNode(target, args, output_variable=output_var)
 
     def visitPrint_statement(self, ctx: SQLParser.Print_statementContext):
         return PrintStatementNode(self.visit(ctx.expression()))
 
-    def visitExecute_statement(self, ctx: SQLParser.Execute_statementContext):
-        variables = ctx.variable()
-        output_var = None
-        target = None
-        if ctx.EQ():
-            output_var = self.visit(variables[0])
-            target = self.visit(ctx.table_name()) if ctx.table_name() else self.visit(variables[1])
-        else:
-            if ctx.table_name():
-                target = self.visit(ctx.table_name())
-            elif variables:
-                target = self.visit(variables[0])
-        args = [self.visit(expr) for expr in ctx.expression()] if ctx.expression() else []
-        return ExecuteNode(target, args, output_var)
-
-    # WITH / CTE ------------------------------------------------------
-    def visitWith_expression(self, ctx: SQLParser.With_expressionContext):
-        ctes = [self.visit(c) for c in ctx.cte_definition()]
-        return WithNode(ctes)
-
-    def visitCte_definition(self, ctx: SQLParser.Cte_definitionContext):
-        name = self.visit(ctx.id_name())
-        columns = self.visit(ctx.column_list()) if ctx.column_list() else []
-        query = self.visit(ctx.select_statement())
-        return CteNode(name, columns, query)
-
     # Expressions -----------------------------------------------------
     def visitLogicalOrExpr(self, ctx: SQLParser.LogicalOrExprContext):
-        nodes = [self.visit(c) for c in ctx.logical_and_expression()]
-        return self._fold_left(nodes, "OR")
+        if len(ctx.logical_and_expression()) == 1:
+            return self.visit(ctx.logical_and_expression(0))
+        exprs = [self.visit(e) for e in ctx.logical_and_expression()]
+        node = exprs[0]
+        for rhs in exprs[1:]:
+            node = BinaryExpressionNode("OR", node, rhs)
+        return node
 
     def visitLogicalAndExpr(self, ctx: SQLParser.LogicalAndExprContext):
-        nodes = [self.visit(c) for c in ctx.not_expression()]
-        return self._fold_left(nodes, "AND")
+        if len(ctx.not_expression()) == 1:
+            return self.visit(ctx.not_expression(0))
+        exprs = [self.visit(e) for e in ctx.not_expression()]
+        node = exprs[0]
+        for rhs in exprs[1:]:
+            node = BinaryExpressionNode("AND", node, rhs)
+        return node
 
     def visitNotExpr(self, ctx: SQLParser.NotExprContext):
         return UnaryExpressionNode("NOT", self.visit(ctx.not_expression()))
@@ -538,9 +503,11 @@ class ASTBuilder(SQLParserVisitor):
         return self.visit(ctx.comparison_expression())
 
     def visitComparisonExpr(self, ctx: SQLParser.ComparisonExprContext):
+        if ctx.getChildCount() == 1:
+            return self.visit(ctx.additive_expression(0))
         left = self.visit(ctx.additive_expression(0))
         right = self.visit(ctx.additive_expression(1))
-        op = ctx.getChild(1).getText()
+        op = ctx.getChild(1).getText().upper()
         return BinaryExpressionNode(op, left, right)
 
     def visitBetweenExpr(self, ctx: SQLParser.BetweenExprContext):
@@ -551,12 +518,14 @@ class ASTBuilder(SQLParserVisitor):
         return BetweenExpressionNode(val, low, high, negated)
 
     def visitInExpr(self, ctx: SQLParser.InExprContext):
-        val = self.visit(ctx.additive_expression())
+        add_exprs = ctx.additive_expression()
+        val_ctx = add_exprs[0] if isinstance(add_exprs, list) else add_exprs
+        val = self.visit(val_ctx)
         negated = ctx.NOT() is not None
-        if ctx.expression_list():
-            options = self.visit(ctx.expression_list())
-        else:
+        if ctx.select_statement():
             options = self.visit(ctx.select_statement())
+        else:
+            options = self.visit(ctx.expression_list())
         return InExpressionNode(val, options, negated)
 
     def visitLikeExpr(self, ctx: SQLParser.LikeExprContext):
@@ -574,18 +543,25 @@ class ASTBuilder(SQLParserVisitor):
         return self.visit(ctx.additive_expression())
 
     def visitAdditiveExpr(self, ctx: SQLParser.AdditiveExprContext):
-        nodes = [self.visit(c) for c in ctx.multiplicative_expression()]
-        ops = [child.getText() for child in ctx.children if child.getText() in ("+", "-")]
-        return self._fold_with_ops(nodes, ops)
+        terms = list(ctx.multiplicative_expression())
+        ops = list(ctx.getChildren())[1::2]
+        node = self.visit(terms[0])
+        for op_tok, rhs_ctx in zip(ops, terms[1:]):
+            node = BinaryExpressionNode(op_tok.getText(), node, self.visit(rhs_ctx))
+        return node
 
     def visitMultiplicativeExpr(self, ctx: SQLParser.MultiplicativeExprContext):
-        nodes = [self.visit(c) for c in ctx.unary_expression()]
-        ops = [child.getText() for child in ctx.children if child.getText() in ("*", "/", "%")]
-        return self._fold_with_ops(nodes, ops)
+        factors = list(ctx.unary_expression())
+        ops = list(ctx.getChildren())[1::2]
+        node = self.visit(factors[0])
+        for op_tok, rhs_ctx in zip(ops, factors[1:]):
+            node = BinaryExpressionNode(op_tok.getText(), node, self.visit(rhs_ctx))
+        return node
 
     def visitUnaryExpr(self, ctx: SQLParser.UnaryExprContext):
         op = ctx.getChild(0).getText()
-        return UnaryExpressionNode(op, self.visit(ctx.unary_expression()))
+        operand = self.visit(ctx.unary_expression())
+        return UnaryExpressionNode(op, operand)
 
     def visitPrimaryUnaryExpr(self, ctx: SQLParser.PrimaryUnaryExprContext):
         return self.visit(ctx.primary_expression())
@@ -600,15 +576,13 @@ class ASTBuilder(SQLParserVisitor):
         return ExistsExpressionNode(self.visit(ctx.select_statement()))
 
     def visitCaseExpr(self, ctx: SQLParser.CaseExprContext):
-        exprs = ctx.expression()
+        exprs = list(ctx.expression())
+        else_expr = exprs[-1] if ctx.ELSE() else None
+        pair_exprs = exprs[:-1] if else_expr is not None else exprs
         whens = []
-        end = len(exprs) - (1 if ctx.ELSE() else 0)
-        for i in range(0, end, 2):
-            condition = self.visit(exprs[i])
-            result = self.visit(exprs[i + 1])
-            whens.append(WhenClauseNode(condition, result))
-        else_expr = self.visit(exprs[-1]) if ctx.ELSE() else None
-        return CaseExpressionNode(whens, else_expr)
+        for cond_ctx, res_ctx in zip(pair_exprs[0::2], pair_exprs[1::2]):
+            whens.append(WhenClauseNode(self.visit(cond_ctx), self.visit(res_ctx)))
+        return CaseExpressionNode(whens, self.visit(else_expr) if else_expr is not None else None)
 
     def visitFunctionCallExpr(self, ctx: SQLParser.FunctionCallExprContext):
         return self.visit(ctx.function_call())
@@ -618,20 +592,29 @@ class ASTBuilder(SQLParserVisitor):
 
     def visitFunction_call(self, ctx: SQLParser.Function_callContext):
         name = self._text_from_id(ctx.id_name())
-        if ctx.STAR():
-            args = [StarNode()]
-        elif ctx.expression_list():
+        args = []
+        if ctx.expression_list():
             args = self.visit(ctx.expression_list())
-        else:
-            args = []
+        elif ctx.STAR():
+            args = [StarNode()]
         return FunctionCallNode(name, args)
 
     def visitAtom(self, ctx: SQLParser.AtomContext):
+        if ctx.table_name():
+            return self.visit(ctx.table_name())
         if ctx.constant():
             return self.visit(ctx.constant())
-        if ctx.table_name():
-            return IdentifierNode(self._text_from_table(ctx.table_name()))
         return self.visit(ctx.variable())
+
+    # Identifiers / variables -----------------------------------------
+    def visitTable_name(self, ctx: SQLParser.Table_nameContext):
+        return TableNode([self.visit(idn) for idn in ctx.id_name()])
+
+    def visitId_name(self, ctx: SQLParser.Id_nameContext):
+        return IdentifierNode(self._text_from_id(ctx))
+
+    def visitAlias_name(self, ctx: SQLParser.Alias_nameContext):
+        return self.visit(ctx.getChild(0))
 
     def visitConstant(self, ctx: SQLParser.ConstantContext):
         if ctx.INT():
@@ -639,57 +622,31 @@ class ASTBuilder(SQLParserVisitor):
         if ctx.FLOAT():
             return LiteralNode(float(ctx.FLOAT().getText()))
         if ctx.STRING():
-            return LiteralNode(ctx.STRING().getText().strip("'").replace("''", "'"))
+            text = ctx.STRING().getText()
+            return LiteralNode(text[1:-1])
         if ctx.NSTRING():
-            return LiteralNode(ctx.NSTRING().getText())
+            text = ctx.NSTRING().getText()
+            return LiteralNode(text[2:-1])
         if ctx.TRUE():
             return LiteralNode(True)
         if ctx.FALSE():
             return LiteralNode(False)
         if ctx.NULL():
             return LiteralNode(None)
-        return None
+        return LiteralNode(ctx.getText())
 
     def visitVariable(self, ctx: SQLParser.VariableContext):
         return VariableNode(ctx.getText())
 
     # Helpers ---------------------------------------------------------
-    def visitTable_name(self, ctx: SQLParser.Table_nameContext):
-        parts = [self.visit(idc) for idc in self._as_list(ctx.id_name())]
-        return TableNode(parts)
-
-    def visitId_name(self, ctx: SQLParser.Id_nameContext):
-        return IdentifierNode(ctx.getText())
-
-    def visitAlias_name(self, ctx: SQLParser.Alias_nameContext):
-        if ctx.STRING():
-            text = ctx.STRING().getText().strip("'").replace("''", "'")
-            return LiteralNode(text)
-        return self.visit(ctx.id_name())
+    def _as_list(self, ctx):
+        if isinstance(ctx, list):
+            return ctx
+        return [ctx]
 
     def _text_from_id(self, ctx):
-        return ctx.getText()
-
-    def _text_from_table(self, ctx):
-        return ctx.getText()
-
-    def _as_list(self, value):
-        if value is None:
-            return []
-        return value if isinstance(value, list) else [value]
-
-    def _fold_left(self, nodes, operator):
-        if not nodes:
-            return None
-        current = nodes[0]
-        for nxt in nodes[1:]:
-            current = BinaryExpressionNode(operator, current, nxt)
-        return current
-
-    def _fold_with_ops(self, nodes, ops):
-        if not nodes:
-            return None
-        current = nodes[0]
-        for op, nxt in zip(ops, nodes[1:]):
-            current = BinaryExpressionNode(op, current, nxt)
-        return current
+        if hasattr(ctx, "getText"):
+            return ctx.getText()
+        if isinstance(ctx, IdentifierNode):
+            return ctx.name
+        return str(ctx)

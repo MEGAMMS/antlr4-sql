@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Any, Optional, Union
+from typing import Iterable, List, Optional, Any
 
 
 class ASTVisitor:
@@ -47,3 +47,10 @@ class ASTNode:
 
     def accept(self, visitor: ASTVisitor):
         return visitor.visit(self)
+
+
+@dataclass
+class ExpressionNode(ASTNode):
+    """Base class for expressions."""
+
+    pass

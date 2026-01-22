@@ -17,7 +17,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "files",
         nargs="*",
-        help="SQL files to compile (default: examples/test6.sql)",
+        help="SQL files to compile (default: built-in sample)",
     )
     parser.add_argument(
         "--show-tokens",
@@ -40,10 +40,18 @@ def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
 
-    paths = args.files or [ROOT / "examples" / "test6.sql"]
-    for path in paths:
-        SQLCompiler.run_file(
-            path,
+    if args.files:
+        for path in args.files:
+            SQLCompiler.run_file(
+                path,
+                show_parse_tree=args.show_parse_tree,
+                show_tokens=args.show_tokens,
+            )
+    else:
+        sample_sql = "SELECT 1 + 1 AS result;"
+        SQLCompiler.run_string(
+            sample_sql,
+            label="inline sample",
             show_parse_tree=args.show_parse_tree,
             show_tokens=args.show_tokens,
         )

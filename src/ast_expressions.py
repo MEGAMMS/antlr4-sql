@@ -3,8 +3,32 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Union
 
-from src.AST.ExpressionNode import ExpressionNode
-from src.AST.ast_nodes import ASTNode
+from src.ast_base import ExpressionNode, ASTNode
+
+
+@dataclass
+class BinaryExpressionNode(ExpressionNode):
+    operator: str
+    left: ExpressionNode
+    right: ExpressionNode
+
+    def _extra(self):
+        return f" ({self.operator})"
+
+    def children(self):
+        return [self.left, self.right]
+
+
+@dataclass
+class UnaryExpressionNode(ExpressionNode):
+    operator: str
+    operand: ExpressionNode
+
+    def _extra(self):
+        return f" ({self.operator})"
+
+    def children(self):
+        return [self.operand]
 
 
 @dataclass
