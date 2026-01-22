@@ -27,7 +27,8 @@ if (Test-Path $Parser) {
     -visitor `
     -no-listener `
     $Parser `
-    -o $OUT_DIR
+    -lib "$OUT_DIR/grammar" `
+    -o $OUT_DIR 
   $Found = $true
 }
 

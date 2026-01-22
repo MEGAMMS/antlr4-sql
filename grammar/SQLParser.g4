@@ -31,7 +31,7 @@ sql_statement
     | print_statement
     | declare_statement
     | set_statement
-    | execute_statement    // <--- أضف هذا
+    | execute_statement
     ;
 
 ddl_statement
