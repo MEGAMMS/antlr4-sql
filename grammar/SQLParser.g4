@@ -325,7 +325,7 @@ additive_expression
     ;
 
 multiplicative_expression
-    : unary_expression ((STAR | SLASH | PERCENT) unary_expression)*                  # MultiplicativeExpr
+    : unary_expression ((STAR | SLASH | PERCENT | BIT_XOR) unary_expression)*        # MultiplicativeExpr
     ;
 
 unary_expression
