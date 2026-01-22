@@ -66,7 +66,7 @@ class TreePrinter:
 
 def print_parse_tree(tree, parser, max_depth=5):
     print("\n" + "🌳 " * 10)
-    print("simple PARSE TREE")
+    print("PARSE TREE")
     print("🌳 " * 10)
     printer = TreePrinter(parser, show_tokens=True)
     printer.print_tree(tree, max_depth=max_depth)

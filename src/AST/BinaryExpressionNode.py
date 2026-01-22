@@ -1,11 +1,15 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
 from src.AST.ExpressionNode import ExpressionNode
 
 
+@dataclass
 class BinaryExpressionNode(ExpressionNode):
-    def __init__(self, operator, left, right):
-        self.operator = operator
-        self.left = left
-        self.right = right
+    operator: str
+    left: ExpressionNode
+    right: ExpressionNode
 
     def _extra(self):
         return f" ({self.operator})"

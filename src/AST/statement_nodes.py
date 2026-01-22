@@ -1,31 +1,37 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import List, Optional
+
 from src.AST.ast_nodes import ASTNode
 
 
+@dataclass
 class WithNode(ASTNode):
-    def __init__(self, ctes):
-        self.ctes = ctes or []
+    ctes: List["CteNode"] = field(default_factory=list)
 
     def children(self):
         return [self.ctes]
 
 
+@dataclass
 class CteNode(ASTNode):
-    def __init__(self, name, columns, query):
-        self.name = name
-        self.columns = columns or []
-        self.query = query
+    name: ASTNode
+    columns: List[ASTNode] = field(default_factory=list)
+    query: ASTNode | None = None
 
     def _extra(self):
-        return f": {self.name.name}"
+        display = getattr(self.name, "name", self.name)
+        return f": {display}"
 
     def children(self):
         return [self.columns, self.query]
 
 
+@dataclass
 class SelectItemNode(ASTNode):
-    def __init__(self, expression, alias=None):
-        self.expression = expression
-        self.alias = alias
+    expression: ASTNode
+    alias: Optional[str] = None
 
     def _extra(self):
         return f" AS {self.alias}" if self.alias else ""
@@ -34,11 +40,11 @@ class SelectItemNode(ASTNode):
         return [self.expression]
 
 
+@dataclass
 class SelectVarAssignNode(ASTNode):
-    def __init__(self, variable, operator, expression):
-        self.variable = variable
-        self.operator = operator
-        self.expression = expression
+    variable: ASTNode
+    operator: str
+    expression: ASTNode
 
     def _extra(self):
         return f" {self.operator}"
@@ -47,10 +53,10 @@ class SelectVarAssignNode(ASTNode):
         return [self.variable, self.expression]
 
 
+@dataclass
 class TableSourceNode(ASTNode):
-    def __init__(self, source, alias=None):
-        self.source = source
-        self.alias = alias
+    source: ASTNode
+    alias: Optional[ASTNode] = None
 
     def _extra(self):
         return f" AS {self.alias.name}" if self.alias else ""
@@ -59,11 +65,11 @@ class TableSourceNode(ASTNode):
         return [self.source]
 
 
+@dataclass
 class JoinNode(ASTNode):
-    def __init__(self, join_type, table_source, condition):
-        self.join_type = join_type
-        self.table_source = table_source
-        self.condition = condition
+    join_type: Optional[str]
+    table_source: TableSourceNode
+    condition: ASTNode
 
     def _extra(self):
         jt = self.join_type or "JOIN"
@@ -73,31 +79,31 @@ class JoinNode(ASTNode):
         return [self.table_source, self.condition]
 
 
+@dataclass
 class ValueListNode(ASTNode):
-    def __init__(self, values):
-        self.values = values or []
+    values: List[ASTNode] = field(default_factory=list)
 
     def children(self):
         return [self.values]
 
 
+@dataclass
 class InsertStatement(ASTNode):
-    def __init__(self, table, columns, values=None, select_query=None, with_clause=None):
-        self.table = table
-        self.columns = columns or []
-        self.values = values or []
-        self.select_query = select_query
-        self.with_clause = with_clause
+    table: ASTNode
+    columns: List[ASTNode] = field(default_factory=list)
+    values: List[ValueListNode] = field(default_factory=list)
+    select_query: Optional[ASTNode] = None
+    with_clause: Optional[WithNode] = None
 
     def children(self):
         return [self.with_clause, self.table, self.columns, self.values, self.select_query]
 
 
+@dataclass
 class AssignmentNode(ASTNode):
-    def __init__(self, target, operator, value):
-        self.target = target
-        self.operator = operator
-        self.value = value
+    target: ASTNode
+    operator: str
+    value: ASTNode
 
     def _extra(self):
         return f" ({self.operator})"
@@ -106,31 +112,31 @@ class AssignmentNode(ASTNode):
         return [self.target, self.value]
 
 
+@dataclass
 class UpdateStatement(ASTNode):
-    def __init__(self, table, assignments, where_clause=None, with_clause=None):
-        self.table = table
-        self.assignments = assignments or []
-        self.where_clause = where_clause
-        self.with_clause = with_clause
+    table: ASTNode
+    assignments: List[AssignmentNode] = field(default_factory=list)
+    where_clause: Optional[ASTNode] = None
+    with_clause: Optional[WithNode] = None
 
     def children(self):
         return [self.with_clause, self.table, self.assignments, self.where_clause]
 
 
+@dataclass
 class DeleteStatement(ASTNode):
-    def __init__(self, table, where_clause=None, with_clause=None):
-        self.table = table
-        self.where_clause = where_clause
-        self.with_clause = with_clause
+    table: ASTNode
+    where_clause: Optional[ASTNode] = None
+    with_clause: Optional[WithNode] = None
 
     def children(self):
         return [self.with_clause, self.table, self.where_clause]
 
 
+@dataclass
 class DataTypeNode(ASTNode):
-    def __init__(self, name, params=None):
-        self.name = name
-        self.params = params or []
+    name: str
+    params: List[ASTNode] = field(default_factory=list)
 
     def _extra(self):
         if self.params:
@@ -145,11 +151,14 @@ class DataTypeNode(ASTNode):
             return f": {self.name}({joined})"
         return f": {self.name}"
 
+    def children(self):
+        return [self.params]
 
+
+@dataclass
 class ColumnConstraintNode(ASTNode):
-    def __init__(self, kind, details=None):
-        self.kind = kind
-        self.details = details
+    kind: str
+    details: Optional[ASTNode] = None
 
     def _extra(self):
         return f": {self.kind}"
@@ -158,11 +167,11 @@ class ColumnConstraintNode(ASTNode):
         return [self.details] if self.details else []
 
 
+@dataclass
 class ColumnDefNode(ASTNode):
-    def __init__(self, name, data_type, constraints=None):
-        self.name = name
-        self.data_type = data_type
-        self.constraints = constraints or []
+    name: ASTNode
+    data_type: DataTypeNode
+    constraints: List[ColumnConstraintNode] = field(default_factory=list)
 
     def _extra(self):
         return f": {self.name.name}"
@@ -171,13 +180,22 @@ class ColumnDefNode(ASTNode):
         return [self.data_type, self.constraints]
 
 
+@dataclass
+class TableReferenceNode(ASTNode):
+    table: ASTNode
+    columns: List[ASTNode] = field(default_factory=list)
+
+    def children(self):
+        return [self.table, self.columns]
+
+
+@dataclass
 class TableConstraintNode(ASTNode):
-    def __init__(self, kind, columns=None, reference=None, condition=None, name=None):
-        self.kind = kind
-        self.columns = columns or []
-        self.reference = reference
-        self.condition = condition
-        self.name = name
+    kind: str
+    columns: List[ASTNode] = field(default_factory=list)
+    reference: Optional[TableReferenceNode] = None
+    condition: Optional[ASTNode] = None
+    name: Optional[ASTNode] = None
 
     def _extra(self):
         parts = [self.kind]
@@ -189,20 +207,20 @@ class TableConstraintNode(ASTNode):
         return [self.columns, self.reference, self.condition]
 
 
+@dataclass
 class CreateTableNode(ASTNode):
-    def __init__(self, table, elements):
-        self.table = table
-        self.elements = elements or []
+    table: ASTNode
+    elements: List[ASTNode] = field(default_factory=list)
 
     def children(self):
         return [self.table, self.elements]
 
 
+@dataclass
 class AlterTableNode(ASTNode):
-    def __init__(self, table, action, detail):
-        self.table = table
-        self.action = action
-        self.detail = detail
+    table: ASTNode
+    action: str
+    detail: ASTNode
 
     def _extra(self):
         return f": {self.action}"
@@ -211,10 +229,10 @@ class AlterTableNode(ASTNode):
         return [self.table, self.detail]
 
 
+@dataclass
 class DropStatementNode(ASTNode):
-    def __init__(self, object_type, name):
-        self.object_type = object_type
-        self.name = name
+    object_type: str
+    name: ASTNode
 
     def _extra(self):
         return f": DROP {self.object_type}"
@@ -223,9 +241,9 @@ class DropStatementNode(ASTNode):
         return [self.name]
 
 
+@dataclass
 class TruncateStatementNode(ASTNode):
-    def __init__(self, table):
-        self.table = table
+    table: ASTNode
 
     def _extra(self):
         return ": TRUNCATE"
@@ -234,27 +252,27 @@ class TruncateStatementNode(ASTNode):
         return [self.table]
 
 
+@dataclass
 class UseStatementNode(ASTNode):
-    def __init__(self, database):
-        self.database = database
+    database: ASTNode
 
     def _extra(self):
         return f": {self.database.name}"
 
 
+@dataclass
 class PrintStatementNode(ASTNode):
-    def __init__(self, expression):
-        self.expression = expression
+    expression: ASTNode
 
     def children(self):
         return [self.expression]
 
 
+@dataclass
 class SetStatementNode(ASTNode):
-    def __init__(self, variable, operator, expression):
-        self.variable = variable
-        self.operator = operator
-        self.expression = expression
+    variable: ASTNode
+    operator: str
+    expression: ASTNode
 
     def _extra(self):
         return f": {self.operator}"
@@ -263,9 +281,9 @@ class SetStatementNode(ASTNode):
         return [self.variable, self.expression]
 
 
+@dataclass
 class DeclareStatementNode(ASTNode):
-    def __init__(self, declarations):
-        self.declarations = declarations or []
+    declarations: List["DeclaredVariableNode"] = field(default_factory=list)
 
     def _extra(self):
         return f": {len(self.declarations)} item(s)"
@@ -274,24 +292,24 @@ class DeclareStatementNode(ASTNode):
         return [self.declarations]
 
 
+@dataclass
 class DeclaredVariableNode(ASTNode):
-    def __init__(self, name, data_type, default_value=None):
-        self.name = name
-        self.data_type = data_type
-        self.default_value = default_value
+    name: ASTNode
+    data_type: DataTypeNode
+    default_value: Optional[ASTNode] = None
 
     def _extra(self):
-        display = self.name.name if hasattr(self.name, "name") else str(self.name)
+        display = getattr(self.name, "name", self.name)
         return f": {display}"
 
     def children(self):
         return [self.data_type, self.default_value]
 
 
+@dataclass
 class CursorDeclareNode(ASTNode):
-    def __init__(self, name, select_query):
-        self.name = name
-        self.select_query = select_query
+    name: ASTNode
+    select_query: ASTNode
 
     def _extra(self):
         return f": {self.name.name}"
@@ -300,18 +318,18 @@ class CursorDeclareNode(ASTNode):
         return [self.select_query]
 
 
+@dataclass
 class OpenCursorNode(ASTNode):
-    def __init__(self, name):
-        self.name = name
+    name: ASTNode
 
     def _extra(self):
         return f": {self.name.name}"
 
 
+@dataclass
 class FetchCursorNode(ASTNode):
-    def __init__(self, name, variables=None):
-        self.name = name
-        self.variables = variables or []
+    name: ASTNode
+    variables: List[ASTNode] = field(default_factory=list)
 
     def _extra(self):
         return f": {self.name.name}"
@@ -320,54 +338,54 @@ class FetchCursorNode(ASTNode):
         return [self.variables]
 
 
+@dataclass
 class CloseCursorNode(ASTNode):
-    def __init__(self, name):
-        self.name = name
+    name: ASTNode
 
     def _extra(self):
         return f": {self.name.name}"
 
 
+@dataclass
 class DeallocateCursorNode(ASTNode):
-    def __init__(self, name):
-        self.name = name
+    name: ASTNode
 
     def _extra(self):
         return f": {self.name.name}"
 
 
+@dataclass
 class BlockNode(ASTNode):
-    def __init__(self, statements):
-        self.statements = statements or []
+    statements: List[ASTNode] = field(default_factory=list)
 
     def children(self):
         return [self.statements]
 
 
+@dataclass
 class IfStatementNode(ASTNode):
-    def __init__(self, condition, then_block, else_block=None):
-        self.condition = condition
-        self.then_block = then_block
-        self.else_block = else_block
+    condition: ASTNode
+    then_block: ASTNode
+    else_block: Optional[ASTNode] = None
 
     def children(self):
         return [self.condition, self.then_block, self.else_block]
 
 
+@dataclass
 class TryCatchNode(ASTNode):
-    def __init__(self, try_block, catch_block):
-        self.try_block = try_block
-        self.catch_block = catch_block
+    try_block: ASTNode
+    catch_block: ASTNode
 
     def children(self):
         return [self.try_block, self.catch_block]
 
 
+@dataclass
 class ExecuteNode(ASTNode):
-    def __init__(self, target, arguments=None, output_variable=None):
-        self.target = target
-        self.arguments = arguments or []
-        self.output_variable = output_variable
+    target: ASTNode
+    arguments: List[ASTNode] = field(default_factory=list)
+    output_variable: Optional[ASTNode] = None
 
     def _extra(self):
         return f": EXEC" + (f" -> {self.output_variable.name}" if self.output_variable else "")

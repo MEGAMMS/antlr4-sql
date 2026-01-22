@@ -1,24 +1,30 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import List, Union
+
 from src.AST.ExpressionNode import ExpressionNode
 from src.AST.ast_nodes import ASTNode
 
 
+@dataclass
 class VariableNode(ExpressionNode):
-    def __init__(self, name):
-        self.name = name
+    name: str
 
     def _extra(self):
         return f": {self.name}"
 
 
+@dataclass
 class StarNode(ExpressionNode):
     def _extra(self):
         return ": *"
 
 
+@dataclass
 class FunctionCallNode(ExpressionNode):
-    def __init__(self, name, arguments=None):
-        self.name = name
-        self.arguments = arguments or []
+    name: str
+    arguments: List[ExpressionNode] = field(default_factory=list)
 
     def _extra(self):
         return f": {self.name}"
@@ -27,12 +33,12 @@ class FunctionCallNode(ExpressionNode):
         return [self.arguments]
 
 
+@dataclass
 class BetweenExpressionNode(ExpressionNode):
-    def __init__(self, value, low, high, negated=False):
-        self.value = value
-        self.low = low
-        self.high = high
-        self.negated = negated
+    value: ExpressionNode
+    low: ExpressionNode
+    high: ExpressionNode
+    negated: bool = False
 
     def _extra(self):
         return " NOT BETWEEN" if self.negated else " BETWEEN"
@@ -41,11 +47,11 @@ class BetweenExpressionNode(ExpressionNode):
         return [self.value, self.low, self.high]
 
 
+@dataclass
 class InExpressionNode(ExpressionNode):
-    def __init__(self, value, options, negated=False):
-        self.value = value
-        self.options = options  # list[ExpressionNode] or SelectNode
-        self.negated = negated
+    value: ExpressionNode
+    options: Union[List[ExpressionNode], ASTNode]
+    negated: bool = False
 
     def _extra(self):
         return " NOT IN" if self.negated else " IN"
@@ -54,11 +60,11 @@ class InExpressionNode(ExpressionNode):
         return [self.value, self.options]
 
 
+@dataclass
 class LikeExpressionNode(ExpressionNode):
-    def __init__(self, value, pattern, negated=False):
-        self.value = value
-        self.pattern = pattern
-        self.negated = negated
+    value: ExpressionNode
+    pattern: ExpressionNode
+    negated: bool = False
 
     def _extra(self):
         return " NOT LIKE" if self.negated else " LIKE"
@@ -67,10 +73,10 @@ class LikeExpressionNode(ExpressionNode):
         return [self.value, self.pattern]
 
 
+@dataclass
 class IsNullExpressionNode(ExpressionNode):
-    def __init__(self, value, negated=False):
-        self.value = value
-        self.negated = negated
+    value: ExpressionNode
+    negated: bool = False
 
     def _extra(self):
         return " IS NOT NULL" if self.negated else " IS NULL"
@@ -79,9 +85,9 @@ class IsNullExpressionNode(ExpressionNode):
         return [self.value]
 
 
+@dataclass
 class ExistsExpressionNode(ExpressionNode):
-    def __init__(self, subquery):
-        self.subquery = subquery
+    subquery: ASTNode
 
     def _extra(self):
         return " EXISTS"
@@ -90,19 +96,19 @@ class ExistsExpressionNode(ExpressionNode):
         return [self.subquery]
 
 
+@dataclass
 class CaseExpressionNode(ExpressionNode):
-    def __init__(self, when_clauses, else_expr=None):
-        self.when_clauses = when_clauses or []
-        self.else_expr = else_expr
+    when_clauses: List["WhenClauseNode"] = field(default_factory=list)
+    else_expr: ExpressionNode | None = None
 
     def children(self):
         return [self.when_clauses, self.else_expr]
 
 
+@dataclass
 class WhenClauseNode(ASTNode):
-    def __init__(self, condition, result):
-        self.condition = condition
-        self.result = result
+    condition: ExpressionNode
+    result: ExpressionNode
 
     def _extra(self):
         return ": WHEN"

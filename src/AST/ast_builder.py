@@ -28,6 +28,7 @@ from src.AST.statement_nodes import (
     ColumnConstraintNode,
     ColumnDefNode,
     TableConstraintNode,
+    TableReferenceNode,
     CreateTableNode,
     AlterTableNode,
     DropStatementNode,
@@ -201,7 +202,7 @@ class ASTBuilder(SQLParserVisitor):
         if ctx.REFERENCES():
             table = self.visit(ctx.table_name())
             ref_col = self.visit(ctx.id_name())
-            details = TableConstraintNode("REFERENCES", columns=[ref_col], reference=table)
+            details = TableReferenceNode(table, [ref_col])
             return ColumnConstraintNode("REFERENCES", details)
         return ColumnConstraintNode(text)
 
@@ -217,7 +218,8 @@ class ASTBuilder(SQLParserVisitor):
             cols = self.visit(ctx.column_list(0))
             ref_table = self.visit(ctx.table_name())
             ref_cols = self.visit(ctx.column_list(1))
-            return TableConstraintNode("FOREIGN KEY", cols, reference=ref_table, name=constraint_name)
+            reference = TableReferenceNode(ref_table, ref_cols)
+            return TableConstraintNode("FOREIGN KEY", cols, reference=reference, name=constraint_name)
         if ctx.CHECK():
             condition = self.visit(ctx.expression())
             return TableConstraintNode("CHECK", condition=condition, name=constraint_name)

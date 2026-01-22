@@ -1,29 +1,49 @@
-# grammar/AST/ast_nodes.py
+from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Iterable, List, Any, Optional, Union
+
+
+class ASTVisitor:
+    """Visitor base with dynamic dispatch."""
+
+    def visit(self, node: Optional["ASTNode"]):
+        if node is None:
+            return None
+        method = getattr(self, f"visit_{node.__class__.__name__}", self.generic_visit)
+        return method(node)
+
+    def generic_visit(self, node: "ASTNode"):
+        for child in node.iter_children():
+            self.visit(child)
+        return node
+
+
+@dataclass
 class ASTNode:
-    """Base class for AST nodes with simple tree printing."""
+    """Base AST node with visitor + child traversal hooks."""
 
-    def children(self):
-        """Override to return iterable of child nodes or lists."""
-        return []
-
-    def _extra(self):
-        """Optional extra info to show next to the node name."""
+    def _extra(self) -> str:
         return ""
 
-    def print(self, indent=0):
-        label = self.__class__.__name__
+    def label(self) -> str:
         extra = self._extra()
-        print(f"{self._indent(indent)}{label}{extra}")
+        return f"{self.__class__.__name__}{extra if extra else ''}"
+
+    def children(self) -> List[Any]:
+        """Override to return a list of child nodes or lists."""
+        return []
+
+    def iter_children(self) -> Iterable[Any]:
         for child in self.children():
             if child is None:
                 continue
             if isinstance(child, list):
-                for c in child:
-                    if c is not None:
-                        c.print(indent + 1)
+                for inner in child:
+                    if inner is not None:
+                        yield inner
             else:
-                child.print(indent + 1)
+                yield child
 
-    def _indent(self, indent):
-        return "  " * indent
+    def accept(self, visitor: ASTVisitor):
+        return visitor.visit(self)

@@ -1,8 +1,13 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
 from .ast_nodes import ASTNode
 
+
+@dataclass
 class IdentifierNode(ASTNode):
-    def __init__(self, name):
-        self.name = name
+    name: str
 
     def _extra(self):
         return f": {self.name}"

@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
 from src.AST.ExpressionNode import ExpressionNode
 
 
+@dataclass
 class UnaryExpressionNode(ExpressionNode):
-    def __init__(self, operator, operand):
-        self.operator = operator
-        self.operand = operand
+    operator: str
+    operand: ExpressionNode
 
     def _extra(self):
         return f" ({self.operator})"

@@ -1,10 +1,15 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import List
+
 from src.AST.ast_nodes import ASTNode
+from src.AST.IdentifierNode import IdentifierNode
 
 
+@dataclass
 class TableNode(ASTNode):
-    def __init__(self, parts):
-        # parts: list[IdentifierNode] representing schema-qualified name
-        self.parts = parts
+    parts: List[IdentifierNode] = field(default_factory=list)  # schema-qualified identifiers
 
     def _extra(self):
         name = ".".join(p.name for p in self.parts)
