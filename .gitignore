@@ -214,6 +214,7 @@ uv.lock
 # extension specific files
 antlr4-sql-output.md
 antlr4-sql-output.txt
+AGENTS.md
 
 # antlr java files
 .antlr

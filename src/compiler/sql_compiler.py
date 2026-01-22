@@ -1,9 +1,9 @@
 from antlr4 import CommonTokenStream, FileStream, InputStream, Token
 from antlr4.error.ErrorListener import ErrorListener
 
-from src.antlr_generated.SQLLexer import SQLLexer
-from src.antlr_generated.SQLParser import SQLParser
-from grammar.AST.ast_builder import ASTBuilder
+from src.antlr_generated.grammar.SQLLexer import SQLLexer
+from src.antlr_generated.grammar.SQLParser import SQLParser
+from src.AST.ast_builder import ASTBuilder
 from src.ast_printer import ASTPrinter
 from src.tree_printer import print_parse_tree
 from src.lexer_runner import token_type_name
