@@ -4,7 +4,7 @@
 USE [MyDatabase];
 GO
 
--- إنشاء جدول مع قيود مختلفة
+-- Create table with various constraints
 CREATE TABLE [dbo].[Employees] (
     [ID] INT IDENTITY(1,1) PRIMARY KEY,
     [FirstName] NVARCHAR(50) NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[Employees] (
 );
 GO
 
--- تعديل الجدول
+-- Alter table
 ALTER TABLE [dbo].[Employees] ADD [HireDate] INT NULL;
 GO
 
@@ -28,11 +28,11 @@ DECLARE @Message NVARCHAR(100);
 
 SET @TaxRate = 0.15;
 
--- هذا كان يسبب الخطأ سابقاً والآن يجب أن يعمل
+-- Previously failing select assignment; should work now
 SELECT @TotalSalary = 5000 * (1 + 0.5); 
 SELECT @Message = 'Calculation Completed';
 
--- عملية جمع تراكمي داخل SELECT
+-- Accumulate within SELECT
 SELECT @TotalSalary += 1000;
 
 PRINT @Message;
@@ -79,14 +79,14 @@ BEGIN TRY
     DECLARE @SQL NVARCHAR(MAX);
     SET @SQL = 'SELECT * FROM NonExistentTable';
     
-    -- تنفيذ أمر ديناميكي
+    -- Execute dynamic statement
     EXEC sp_executesql @SQL;
 END TRY
 BEGIN CATCH
     DECLARE @ErrorMsg NVARCHAR(4000);
     DECLARE @ErrorSev INT;
 
-    -- اختبار SELECT المتغيرات داخل CATCH
+    -- Select variables inside CATCH
     SELECT 
         @ErrorMsg = ERROR_MESSAGE(),
         @ErrorSev = ERROR_SEVERITY();

@@ -255,7 +255,7 @@ UNCLOSED_BRACKET_ID
   ;
 
 // ===== Identifiers =====
-// تم إزالة كود البايثون لتجنب التضارب مع البارسير
+// Removed inline Python to avoid parser conflicts
 ID
   : [a-zA-Z_][a-zA-Z0-9_]*
   ;

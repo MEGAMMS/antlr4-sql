@@ -14,7 +14,7 @@ def token_type_name(lexer: SQLLexer, ttype: int) -> str:
     if ttype == Token.EOF:
         return "EOF"
 
-    # 1) symbolicNames (مثل SELECT, ID, STRING...)
+    # First try symbolicNames (e.g., SELECT, ID, STRING)
     try:
         sym = lexer.symbolicNames[ttype]
         if sym and not sym.startswith("T__"):
@@ -22,7 +22,7 @@ def token_type_name(lexer: SQLLexer, ttype: int) -> str:
     except Exception:
         pass
 
-    # 2) literals أو T__x -> خذ الاسم من Vocabulary
+    # Otherwise fall back to literal names / T__x via the vocabulary
     try:
         vocab = lexer.getVocabulary()
         name = vocab.getDisplayName(ttype)
@@ -42,7 +42,7 @@ def tokenize_file(path: str, strict: bool = False):
     stream.fill()
 
     if strict and err.errors:
-        # وقف على أول Lexical error
+        # Stop on the first lexical error
         raise SyntaxError(err.errors[0])
 
     tokens = []
@@ -69,6 +69,6 @@ def print_tokens(path: str, strict: bool = False) -> None:
 
     for i, t in enumerate(tokens, start=1):
         name = token_type_name(lexer, t.type)
-        text = repr(t.text)  # يبين \n و \r بشكل واضح
+        text = repr(t.text)  # shows newline/return escapes clearly
         pos = f"{t.line}:{t.column}"
         print(f"{i:>4}  {t.type:>4}  {name:<18}  {text:<30}  {pos:<10}")

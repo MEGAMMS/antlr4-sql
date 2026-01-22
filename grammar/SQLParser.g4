@@ -58,10 +58,10 @@ dml_statement
 // ==========================================
 
 create_statement
-    : CREATE TABLE table_name LPAREN table_element_list RPAREN  // تم تغيير column_def_list إلى table_element_list
+    : CREATE TABLE table_name LPAREN table_element_list RPAREN  // column_def_list renamed to table_element_list
     ;
 
-// قائمة يمكن أن تحتوي على أعمدة أو قيود جدول
+// Table elements can be columns or table constraints
 table_element_list
     : table_element (COMMA table_element)*
     ;
@@ -75,7 +75,7 @@ column_def
     : id_name data_type (column_constraint)*
     ;
 
-// قاعدة جديدة لدعم القيود المنفصلة مثل CONSTRAINT PK ...
+// Supports standalone table constraints such as CONSTRAINT PK ...
 table_constraint
     : (CONSTRAINT id_name)? (PRIMARY KEY | UNIQUE) (CLUSTERED | NONCLUSTERED)? LPAREN column_list RPAREN
     | (CONSTRAINT id_name)? FOREIGN KEY LPAREN column_list RPAREN REFERENCES table_name LPAREN column_list RPAREN
@@ -89,11 +89,11 @@ data_type
 column_constraint
     : NOT NULL
     | NULL
-    | PRIMARY KEY (CLUSTERED | NONCLUSTERED)?  // تم السماح بـ CLUSTERED هنا أيضاً
+    | PRIMARY KEY (CLUSTERED | NONCLUSTERED)?  // CLUSTERED allowed here too
     | UNIQUE 
     | DEFAULT expression
     | IDENTITY (LPAREN INT COMMA INT RPAREN)?
-    | REFERENCES table_name LPAREN id_name RPAREN // إضافة بسيطة لدعم المفاتيح الأجنبية المضمنة
+    | REFERENCES table_name LPAREN id_name RPAREN // Allow inline foreign keys
     ;
 
 alter_statement
@@ -133,13 +133,13 @@ select_statement
       )? 
       (ORDER BY order_list)?
     ;
-// تم التعديل: القائمة أصبحت تحتوي على select_item
+// The select list now contains select_item entries
 select_list
     : STAR
     | select_item (COMMA select_item)*
     ;
 
-// قاعدة جديدة: تحدد ما يمكن كتابته داخل SELECT
+// Defines what can appear inside a SELECT list
 select_item
     : variable (EQ | PLUS_ASSIGN | MINUS_ASSIGN | STAR_ASSIGN | SLASH_ASSIGN | PERCENT_ASSIGN) expression  # SelectVarAssignment
     | id_name EQ expression                                                                                # SelectAliasAssignment
@@ -166,12 +166,12 @@ order_list
 insert_statement
     : INSERT (INTO)? table_name (LPAREN column_list RPAREN)? 
       (
-        VALUES expression_list_parens (COMMA expression_list_parens)* // <--- تم التعديل
+        VALUES expression_list_parens (COMMA expression_list_parens)* // Updated to accept parenthesized lists
       | select_statement
       )
     ;
 
-// قاعدة مساعدة جديدة للأقواس
+// Helper rule for parenthesized value lists
 expression_list_parens
     : LPAREN expression_list RPAREN
     ;
@@ -268,7 +268,7 @@ deallocate_cursor_statement
 // ==========================================
 
 control_flow_statement
-    // التعديل: وضعنا BEGIN TRY في البداية لتكون لها الأولوية
+    // BEGIN TRY placed first to give it priority
     : BEGIN TRY (sql_statement SEMI?)* END TRY BEGIN CATCH (sql_statement SEMI?)* END CATCH
     | BEGIN (sql_statement SEMI?)* END
     | IF expression sql_statement (ELSE sql_statement)?
@@ -278,7 +278,7 @@ print_statement
     : PRINT expression
     ;
 execute_statement
-    // التعديل: دعمنا المتغيرات كاسم للإجراء، ودعمنا استقبال القيمة العائدة
+    // Allow variables as procedure names and capturing return value
     : EXEC (variable EQ)? (table_name | variable) (expression (COMMA expression)*)?
     ;
 
