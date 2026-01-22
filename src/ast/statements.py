@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from src.ast_base import ASTNode
-from src.ast_expressions import ExpressionNode
+from src.ast.base import ASTNode
+from src.ast.expressions import ExpressionNode
 
 
 @dataclass

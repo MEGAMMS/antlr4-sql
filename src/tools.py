@@ -6,7 +6,7 @@ from antlr4.tree.Tree import TerminalNodeImpl, ErrorNodeImpl
 from antlr4 import ParserRuleContext
 
 from src.antlr_generated.grammar.SQLLexer import SQLLexer
-from src.ast_base import ASTNode
+from src.ast.base import ASTNode
 
 
 class CollectingErrorListener(ErrorListener):

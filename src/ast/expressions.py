@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Union
 
-from src.ast_base import ExpressionNode, ASTNode
+from src.ast.base import ExpressionNode, ASTNode
 
 
 @dataclass
