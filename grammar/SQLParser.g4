@@ -268,10 +268,25 @@ deallocate_cursor_statement
 // ==========================================
 
 control_flow_statement
-    // BEGIN TRY placed first to give it priority
-    : BEGIN TRY (sql_statement SEMI?)* END TRY BEGIN CATCH (sql_statement SEMI?)* END CATCH
-    | BEGIN (sql_statement SEMI?)* END
-    | IF expression sql_statement (ELSE sql_statement)?
+    : try_catch
+    | begin_block
+    | if_statement
+    ;
+
+try_catch
+    : BEGIN TRY block END TRY BEGIN CATCH block END CATCH
+    ;
+
+begin_block
+    : BEGIN block END
+    ;
+
+block
+    : (sql_statement SEMI?)*
+    ;
+
+if_statement
+    : IF expression sql_statement SEMI? (ELSE sql_statement SEMI?)?
     ;
 
 print_statement

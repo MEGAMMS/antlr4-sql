@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from src.antlr_generated.grammar.SQLParserVisitor import SQLParserVisitor
-from src.antlr_generated.grammar.SQLParser import SQLParser
+from src.antlr_generated.SQLParserVisitor import SQLParserVisitor
+from src.antlr_generated.SQLParser import SQLParser
 
 from src.sql_ast.base import ExpressionNode
 from src.sql_ast.expressions import (
@@ -453,7 +453,18 @@ class ASTBuilder(SQLParserVisitor):
         return DeallocateCursorNode(self.visit(ctx.id_name()))
 
     def visitBlock(self, ctx: SQLParser.BlockContext):
-        return BlockNode(self.visit(ctx.statementBatch()))
+        statements = []
+        for stmt in ctx.sql_statement():
+            node = self.visit(stmt)
+            if node:
+                if isinstance(node, list):
+                    statements.extend(node)
+                else:
+                    statements.append(node)
+        return BlockNode(statements)
+
+    def visitBegin_block(self, ctx: SQLParser.Begin_blockContext):
+        return self.visit(ctx.block())
 
     def visitIf_statement(self, ctx: SQLParser.If_statementContext):
         condition = self.visit(ctx.expression())

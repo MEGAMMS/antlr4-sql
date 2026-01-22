@@ -1,0 +1,47 @@
+@startuml
+skinparam defaultFontName Monospaced
+title SQL Compiler (ANTLR) Overview
+
+package "CLI" {
+  class SQLCompiler {
+    +run_file(path, show_parse_tree=False, show_tokens=True)
+    +run_string(sql, label="<input>", show_parse_tree=False, show_tokens=True)
+  }
+}
+
+package "ANTLR" {
+  class SQLLexer
+  class SQLParser
+  class SQLParserVisitor
+}
+
+package "AST Builder" {
+  class ASTBuilder
+  interface ASTNode
+  class ProgramNode
+  class SelectNode
+  class IfStatementNode
+}
+
+package "Printing/Graph" {
+  class ASTPrinter
+  class ast_to_dot
+}
+
+SQLCompiler --> SQLLexer : lexes input
+SQLCompiler --> SQLParser : parses tokens
+SQLCompiler --> ASTBuilder : build AST
+ASTBuilder ..> SQLParserVisitor : extends
+ASTBuilder --> ProgramNode
+ASTBuilder --> SelectNode
+ASTBuilder --> IfStatementNode
+SQLCompiler --> ASTPrinter : pretty print AST
+SQLCompiler --> ast_to_dot : export DOT
+
+ProgramNode -down- SelectNode
+ProgramNode -down- IfStatementNode
+ASTNode <|-- ProgramNode
+ASTNode <|-- SelectNode
+ASTNode <|-- IfStatementNode
+
+@enduml

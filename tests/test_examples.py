@@ -6,7 +6,7 @@ import pytest
 
 # Skip tests cleanly if ANTLR outputs are missing
 try:
-    import src.antlr_generated.grammar.SQLLexer  # noqa: F401
+    import src.antlr_generated.SQLLexer  # noqa: F401
 except ModuleNotFoundError:  # pragma: no cover
     pytestmark = pytest.mark.skip(reason="ANTLR output missing; run ./scripts/generate_parser.sh first")
 
@@ -24,7 +24,7 @@ def _run_file(path: Path, show_tokens: bool = False):
         return SQLCompiler.run_file(str(path), show_tokens=show_tokens)
 
 
-@pytest.mark.parametrize("filename", ["test4.sql", "test5.sql", "test6.sql", "test7.sql", "test8.sql"])
+@pytest.mark.parametrize("filename", ["test4.sql", "test5.sql", "test6.sql", "test7.sql", "test8.sql", "test9.sql"])
 def test_examples_parse_success(filename):
     ast = _run_file(EXAMPLES_DIR / filename, show_tokens=False)
     assert ast is not None

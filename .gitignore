@@ -220,3 +220,6 @@ AGENTS.md
 .antlr
 
 src/antlr_generated
+
+# local outputs
+artifacts/
