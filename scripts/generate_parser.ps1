@@ -16,6 +16,7 @@ if (Test-Path $Lexer) {
     -visitor `
     -no-listener `
     $Lexer `
+    -Xexact-output-dir `
     -o $OUT_DIR
   $Found = $true
 }
@@ -27,7 +28,9 @@ if (Test-Path $Parser) {
     -visitor `
     -no-listener `
     $Parser `
-    -lib "$OUT_DIR/grammar" `
+    -Xexact-output-dir `
+    # -lib "$OUT_DIR/grammar" `
+    -lib $OUT_DIR `
     -o $OUT_DIR 
   $Found = $true
 }
