@@ -3,8 +3,8 @@ from __future__ import annotations
 from src.antlr_generated.grammar.SQLParserVisitor import SQLParserVisitor
 from src.antlr_generated.grammar.SQLParser import SQLParser
 
-from src.ast.base import ExpressionNode
-from src.ast.expressions import (
+from src.sql_ast.base import ExpressionNode
+from src.sql_ast.expressions import (
     BinaryExpressionNode,
     UnaryExpressionNode,
     VariableNode,
@@ -18,7 +18,7 @@ from src.ast.expressions import (
     CaseExpressionNode,
     WhenClauseNode,
 )
-from src.ast.statements import (
+from src.sql_ast.statements import (
     ProgramNode,
     SelectNode,
     TableNode,
