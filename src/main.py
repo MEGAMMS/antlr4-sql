@@ -35,7 +35,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main():
-    from compiler.sql_compiler import SQLCompiler
+    from sql_compiler import SQLCompiler
 
     parser = _build_arg_parser()
     args = parser.parse_args()

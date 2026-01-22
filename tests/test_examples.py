@@ -10,7 +10,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pytestmark = pytest.mark.skip(reason="ANTLR output missing; run ./scripts/generate_parser.sh first")
 
-from compiler.sql_compiler import SQLCompiler
+from sql_compiler import SQLCompiler
 
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
