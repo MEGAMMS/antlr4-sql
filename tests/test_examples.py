@@ -11,6 +11,7 @@ except ModuleNotFoundError:  # pragma: no cover
     pytestmark = pytest.mark.skip(reason="ANTLR output missing; run ./scripts/generate_parser.sh first")
 
 from sql_compiler import SQLCompiler
+from sql_ast.graph import ast_to_dot
 
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
@@ -33,3 +34,11 @@ def test_examples_parse_success(filename):
 def test_examples_known_errors(filename):
     ast = _run_file(EXAMPLES_DIR / filename, show_tokens=False)
     assert ast is None
+
+
+def test_ast_dot_generation():
+    sql = "SELECT 1 ^ 2 AS r;"
+    ast = SQLCompiler.run_string(sql, label="<bit-xor>", show_tokens=False, show_parse_tree=False)
+    dot = ast_to_dot(ast)
+    assert "digraph AST" in dot
+    assert "SelectNode" in dot or "ProgramNode" in dot
