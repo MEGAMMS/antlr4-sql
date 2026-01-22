@@ -1,4 +1,4 @@
-from .base import ASTNode, ASTVisitor, ExpressionNode
+from .base import ASTNode, ExpressionNode
 from .builder import ASTBuilder
 from .expressions import (
     BinaryExpressionNode,
@@ -18,7 +18,6 @@ from .statements import *
 
 __all__ = [
     "ASTNode",
-    "ASTVisitor",
     "ExpressionNode",
     "ASTBuilder",
     "BinaryExpressionNode",

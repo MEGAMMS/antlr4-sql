@@ -1,22 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Any
-
-
-class ASTVisitor:
-    """Visitor base with dynamic dispatch."""
-
-    def visit(self, node: Optional["ASTNode"]):
-        if node is None:
-            return None
-        method = getattr(self, f"visit_{node.__class__.__name__}", self.generic_visit)
-        return method(node)
-
-    def generic_visit(self, node: "ASTNode"):
-        for child in node.iter_children():
-            self.visit(child)
-        return node
+from typing import Iterable, List, Any
 
 
 @dataclass
@@ -44,9 +29,6 @@ class ASTNode:
                         yield inner
             else:
                 yield child
-
-    def accept(self, visitor: ASTVisitor):
-        return visitor.visit(self)
 
 
 @dataclass
